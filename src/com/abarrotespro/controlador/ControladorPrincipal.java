@@ -14,6 +14,10 @@ import javax.swing.UIManager;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.modelo.servicio.GeneradorTicket;
+import com.abarrotespro.modelo.servicio.LectorTickets;
+import com.abarrotespro.vista.panel.PanelConfiguracion;
+import com.abarrotespro.vista.panel.PanelTickets;
+import com.abarrotespro.vista.util.TemaUi;
 import com.abarrotespro.vista.VistaLogin;
 import com.abarrotespro.vista.VistaPrincipal;
 import com.abarrotespro.vista.panel.PanelCorte;
@@ -84,7 +88,8 @@ public class ControladorPrincipal {
         configurarInventario();
         configurarProveedores();
         configurarCorte();
-        configurarCerrarSesion();
+        configurarTickets();
+        configurarConfiguracion();
 
         vistaPrincipal.mostrarModulo(VistaPrincipal.CARD_VENTA, "Venta");
         refrescarVenta();
@@ -117,6 +122,8 @@ public class ControladorPrincipal {
                     }
                 } else if (VistaPrincipal.CARD_CORTE.equals(card)) {
                     refrescarCorte();
+                } else if (VistaPrincipal.CARD_TICKETS.equals(card)) {
+                    refrescarTickets();
                 }
             });
         });
@@ -200,6 +207,7 @@ public class ControladorPrincipal {
             
             refrescarVenta();
             refrescarCorte();
+            refrescarTickets();
         }
     }
 
@@ -340,19 +348,47 @@ public class ControladorPrincipal {
         panel.actualizarHistorial(modelo.getHistorialCortes());
     }
 
-    private void configurarCerrarSesion() {
-        JButton btn = vistaPrincipal.getBotonCerrarSesion();
-        if (btn != null) {
-            btn.addActionListener(e -> {
-                int confirm = JOptionPane.showConfirmDialog(vistaPrincipal,
-                        "Desea cerrar sesion?", "Confirmar",
-                        JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    modelo.cerrarSesion();
-                    vistaPrincipal.dispose();
-                    mostrarLogin();
-                }
-            });
-        }
+    private void configurarTickets() {
+        PanelTickets panel = vistaPrincipal.getPanelTickets();
+        panel.getListaArchivos().addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) {
+                return;
+            }
+            String seleccion = panel.getListaArchivos().getSelectedValue();
+            if (seleccion == null) {
+                panel.mostrarContenido("");
+                return;
+            }
+            try {
+                panel.mostrarContenido(LectorTickets.leerContenido(seleccion));
+            } catch (Exception ex) {
+                panel.mostrarContenido("No se pudo leer el archivo:\n" + ex.getMessage());
+            }
+        });
+    }
+
+    private void refrescarTickets() {
+        vistaPrincipal.getPanelTickets().actualizarLista(LectorTickets.listarArchivos());
+    }
+
+    private void configurarConfiguracion() {
+        PanelConfiguracion panel = vistaPrincipal.getPanelConfiguracion();
+
+        panel.getToggleModoOscuro().addActionListener(e -> {
+            boolean oscuro = panel.getToggleModoOscuro().isSelected();
+            TemaUi.aplicarModoOscuro(oscuro);
+            vistaPrincipal.refrescarTema();
+        });
+
+        panel.getBotonCerrarSesion().addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(vistaPrincipal,
+                    "Desea cerrar sesion?", "Confirmar",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                modelo.cerrarSesion();
+                vistaPrincipal.dispose();
+                mostrarLogin();
+            }
+        });
     }
 }

@@ -10,6 +10,7 @@ import javax.swing.border.EmptyBorder;
 import com.abarrotespro.modelo.Producto;
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.ComponentesUi;
+import com.abarrotespro.vista.util.FormatoIdUtil;
 import com.abarrotespro.vista.util.GestorImagenProducto;
 
 /**
@@ -28,7 +29,7 @@ public class TarjetaProducto extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Color.WHITE);
+                g2.setColor(Colores.FONDO_TARJETA);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 16, 16));
                 g2.setColor(Colores.GRIS_BORDE);
                 g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 16, 16));
@@ -51,13 +52,14 @@ public class TarjetaProducto extends JPanel {
         JPanel info = new JPanel();
         info.setOpaque(false);
         info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
+        info.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel nombre = new JLabel("<html><center>" + producto.getNombre() + "</center></html>");
+        JLabel nombre = new JLabel(producto.getNombre(), SwingConstants.CENTER);
         nombre.setFont(new Font("Segoe UI", Font.BOLD, 12));
         nombre.setForeground(Colores.NEGRO_TEXTO);
         nombre.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel precio = new JLabel(ComponentesUi.formatearMoneda(producto.getPrecio()));
+        JLabel precio = new JLabel(ComponentesUi.formatearMoneda(producto.getPrecio()), SwingConstants.CENTER);
         precio.setFont(new Font("Segoe UI", Font.BOLD, 14));
         precio.setForeground(Colores.AZUL_PRIMARIO);
         precio.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -65,11 +67,18 @@ public class TarjetaProducto extends JPanel {
         JLabel stock = ComponentesUi.crearEtiquetaStock(producto.getStock());
         stock.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+        JLabel idProducto = new JLabel(FormatoIdUtil.formatearIdVisual(producto.getId()), SwingConstants.CENTER);
+        idProducto.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        idProducto.setForeground(Colores.GRIS_TEXTO);
+        idProducto.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         info.add(nombre);
         info.add(Box.createVerticalStrut(8));
         info.add(precio);
         info.add(Box.createVerticalStrut(6));
         info.add(stock);
+        info.add(Box.createVerticalStrut(6));
+        info.add(idProducto);
 
         tarjeta.add(emoji, BorderLayout.NORTH);
         tarjeta.add(info, BorderLayout.CENTER);

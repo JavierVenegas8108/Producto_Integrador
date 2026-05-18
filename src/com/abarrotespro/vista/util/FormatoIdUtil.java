@@ -14,4 +14,23 @@ public final class FormatoIdUtil {
     public static String formatearIdVisual(int id) {
         return String.format("%0" + DIGITOS_ID + "d", id);
     }
+
+    /**
+     * Interpreta texto de busqueda como ID numerico (ej. 1, 00001).
+     * @return el ID o null si no es un valor numerico valido
+     */
+    public static Integer parsearIdBusqueda(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return null;
+        }
+        String limpio = texto.trim();
+        if (!limpio.matches("\\d+")) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(limpio);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 }

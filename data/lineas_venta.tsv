@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 4	1	Leche Entera 1L	5	22.5
 4	3	Arroz 1kg	4	28.9
 4	7	Huevo Carton 12pz	2	52.0
@@ -8,3 +9,10 @@
 4	9	Papel Higienico 4 rollos	1	35.0
 4	4	Aceite Vegetal 1L	1	42.0
 4	2	Pan Blanco Bolsa	1	38.0
+=======
+1	2	Pan Blanco Bolsa	2	38.0
+1	4	Aceite Vegetal 1L	1	42.0
+1	3	Arroz 1kg	1	28.9
+1	1	Leche Entera 1L	1	22.5
+1	6	Sabritas Original	1	19.0
+>>>>>>> branch 'main' of https://github.com/JavierVenegas8108/Producto_Integrador

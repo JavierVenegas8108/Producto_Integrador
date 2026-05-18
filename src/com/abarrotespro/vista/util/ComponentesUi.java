@@ -15,14 +15,17 @@ public final class ComponentesUi {
     private ComponentesUi() {
     }
 
-    /** Panel con esquinas redondeadas y sombra suave. */
+    /** Panel con esquinas redondeadas; el color se lee de {@link Colores} al pintar. */
     public static JPanel crearPanelRedondeado(Color fondo, int radio) {
         return new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(fondo);
+                Color color = Boolean.TRUE.equals(getClientProperty("tema.decorado"))
+                        ? Colores.FONDO_TARJETA
+                        : (Colores.esModoOscuro() ? Colores.FONDO_TARJETA : fondo);
+                g2.setColor(color);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), radio, radio));
                 g2.dispose();
             }

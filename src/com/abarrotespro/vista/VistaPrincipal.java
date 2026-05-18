@@ -7,13 +7,15 @@ import java.util.Map;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
+import com.abarrotespro.vista.panel.PanelConfiguracion;
 import com.abarrotespro.vista.panel.PanelCorte;
-import com.abarrotespro.vista.panel.PanelEnDesarrollo;
 import com.abarrotespro.vista.panel.PanelInventario;
+import com.abarrotespro.vista.panel.PanelTickets;
 import com.abarrotespro.vista.panel.PanelVenta;
 import com.abarrotespro.vista.panel.ProveedoresPanel;
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.IconosUi;
+import com.abarrotespro.vista.util.TemaUi;
 
 /**
  * Ventana principal con sidebar, barra superior y paneles modulares (CardLayout).
@@ -37,9 +39,14 @@ public class VistaPrincipal extends JFrame {
 
     private PanelVenta panelVenta;
     private PanelInventario panelInventario;
+    private PanelTickets panelTickets;
     private ProveedoresPanel panelProveedores;
     private PanelCorte panelCorte;
-    private JButton botonCerrarSesion;
+    private PanelConfiguracion panelConfiguracion;
+    private JPanel sidebar;
+    private JPanel areaPrincipal;
+    private JPanel barraSuperior;
+    private String moduloActivo = CARD_VENTA;
 
     public VistaPrincipal() {
         setTitle("Abarrotes Pro - Punto de Venta");
@@ -51,6 +58,7 @@ public class VistaPrincipal extends JFrame {
         cardLayout = new CardLayout();
         panelContenido = new JPanel(cardLayout);
         panelContenido.setBackground(Colores.FONDO_APP);
+        panelContenido.putClientProperty(TemaUi.PROP_FONDO, "contenido");
 
         etiquetaModulo = new JLabel("Venta");
         etiquetaUsuario = new JLabel("Administrador");
@@ -70,16 +78,19 @@ public class VistaPrincipal extends JFrame {
 
         panelContenido.add(panelVenta, CARD_VENTA);
         panelContenido.add(panelInventario, CARD_INVENTARIO);
-        panelContenido.add(new PanelEnDesarrollo("Tickets"), CARD_TICKETS);
+        panelTickets = new PanelTickets();
+        panelConfiguracion = new PanelConfiguracion();
+        panelContenido.add(panelTickets, CARD_TICKETS);
         panelContenido.add(panelProveedores, CARD_PROVEEDORES);
         panelContenido.add(panelCorte, CARD_CORTE);
-        panelContenido.add(new PanelEnDesarrollo("Configuracion"), CARD_CONFIG);
+        panelContenido.add(panelConfiguracion, CARD_CONFIG);
     }
 
     private JPanel crearSidebar() {
-        JPanel sidebar = new JPanel();
+        sidebar = new JPanel();
+        sidebar.putClientProperty(TemaUi.PROP_FONDO, "sidebar");
         sidebar.setPreferredSize(new Dimension(220, 0));
-        sidebar.setBackground(Color.WHITE);
+        sidebar.setBackground(Colores.FONDO_SIDEBAR);
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Colores.GRIS_BORDE));
 
@@ -104,17 +115,6 @@ public class VistaPrincipal extends JFrame {
         agregarBotonNav(sidebar, "Configuracion", CARD_CONFIG, IconosUi.TipoIcono.CONFIGURACION);
 
         sidebar.add(Box.createVerticalGlue());
-
-        botonCerrarSesion = new JButton("Cerrar Sesion");
-        botonCerrarSesion.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        botonCerrarSesion.setForeground(Colores.ROJO);
-        botonCerrarSesion.setBorderPainted(false);
-        botonCerrarSesion.setContentAreaFilled(false);
-        botonCerrarSesion.setAlignmentX(Component.CENTER_ALIGNMENT);
-        botonCerrarSesion.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        botonCerrarSesion.setBorder(new EmptyBorder(16, 0, 24, 0));
-        sidebar.add(botonCerrarSesion);
-
         return sidebar;
     }
 
@@ -122,12 +122,15 @@ public class VistaPrincipal extends JFrame {
         JButton btn = new JButton();
         btn.setName(card);
         btn.setLayout(new BorderLayout(10, 0));
-        btn.setBorder(new EmptyBorder(8, 20, 8, 16));
+        btn.setBorder(new EmptyBorder(10, 16, 10, 16));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setMaximumSize(new Dimension(220, 36));
-        btn.setPreferredSize(new Dimension(220, 36));
+        btn.setContentAreaFilled(true);
+        btn.setOpaque(true);
+        btn.putClientProperty(TemaUi.PROP_FONDO, "nav");
+        btn.setBackground(Colores.FONDO_SIDEBAR);
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        btn.setPreferredSize(new Dimension(Integer.MAX_VALUE, 44));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JLabel icono = new JLabel(IconosUi.crear(tipoIcono, 18, Colores.GRIS_TEXTO));
@@ -141,20 +144,29 @@ public class VistaPrincipal extends JFrame {
         btn.add(etiqueta, BorderLayout.CENTER);
 
         botonesNav.put(card, btn);
-        sidebar.add(btn);
+
+        JPanel fila = new JPanel(new BorderLayout());
+        fila.setOpaque(false);
+        fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        fila.setAlignmentX(Component.CENTER_ALIGNMENT);
+        fila.add(btn, BorderLayout.CENTER);
+        sidebar.add(fila);
     }
 
     private JPanel crearAreaPrincipal() {
-        JPanel area = new JPanel(new BorderLayout());
-        area.setBackground(Colores.FONDO_APP);
-        area.add(crearBarraSuperior(), BorderLayout.NORTH);
-        area.add(panelContenido, BorderLayout.CENTER);
-        return area;
+        areaPrincipal = new JPanel(new BorderLayout());
+        areaPrincipal.putClientProperty(TemaUi.PROP_FONDO, "area");
+        areaPrincipal.setBackground(Colores.FONDO_APP);
+        barraSuperior = crearBarraSuperior();
+        areaPrincipal.add(barraSuperior, BorderLayout.NORTH);
+        areaPrincipal.add(panelContenido, BorderLayout.CENTER);
+        return areaPrincipal;
     }
 
     private JPanel crearBarraSuperior() {
         JPanel barra = new JPanel(new BorderLayout());
-        barra.setBackground(Color.WHITE);
+        barra.putClientProperty(TemaUi.PROP_FONDO, "barra");
+        barra.setBackground(Colores.FONDO_BARRA);
         barra.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, Colores.GRIS_BORDE),
                 new EmptyBorder(16, 24, 16, 24)));
@@ -210,12 +222,16 @@ public class VistaPrincipal extends JFrame {
     }
 
     public void mostrarModulo(String card, String tituloModulo) {
+        moduloActivo = card;
         cardLayout.show(panelContenido, card);
         etiquetaModulo.setText(tituloModulo);
         botonesNav.forEach((nombre, btn) -> {
             boolean activo = nombre.equals(card);
-            btn.setBackground(activo ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
-            btn.setOpaque(activo);
+            btn.setBackground(activo ? Colores.SIDEBAR_ACTIVO : Colores.FONDO_SIDEBAR);
+            btn.setOpaque(true);
+            if (sidebar != null) {
+                sidebar.setBackground(Colores.FONDO_SIDEBAR);
+            }
 
             Component[] hijos = btn.getComponents();
             for (Component hijo : hijos) {
@@ -254,8 +270,12 @@ public class VistaPrincipal extends JFrame {
         return botonesNav;
     }
 
-    public JButton getBotonCerrarSesion() {
-        return botonCerrarSesion;
+    public PanelTickets getPanelTickets() {
+        return panelTickets;
+    }
+
+    public PanelConfiguracion getPanelConfiguracion() {
+        return panelConfiguracion;
     }
 
     public PanelVenta getPanelVenta() {
@@ -272,5 +292,27 @@ public class VistaPrincipal extends JFrame {
 
     public ProveedoresPanel getPanelProveedores() {
         return panelProveedores;
+    }
+
+    /** Reaplica colores del tema activo en toda la ventana. */
+    public void refrescarTema() {
+        getContentPane().setBackground(Colores.FONDO_APP);
+        if (sidebar != null) {
+            sidebar.setBackground(Colores.FONDO_SIDEBAR);
+            sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Colores.GRIS_BORDE));
+        }
+        if (areaPrincipal != null) {
+            areaPrincipal.setBackground(Colores.FONDO_APP);
+        }
+        if (barraSuperior != null) {
+            barraSuperior.setBackground(Colores.FONDO_BARRA);
+        }
+        panelContenido.setBackground(Colores.FONDO_APP);
+        etiquetaModulo.setForeground(Colores.NEGRO_TEXTO);
+        etiquetaUsuario.setForeground(Colores.NEGRO_TEXTO);
+        TemaUi.recorrer(getContentPane());
+        mostrarModulo(moduloActivo, etiquetaModulo.getText());
+        revalidate();
+        repaint();
     }
 }

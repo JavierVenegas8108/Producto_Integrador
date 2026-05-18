@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 1	Leche Entera 1L	22.5	39	Lacteos	🥛	0	
 2	Pan Blanco Bolsa	38.0	19	Panaderia	🍞	0	
 3	Arroz 1kg	28.9	56	Abarrotes	🍚	0	
@@ -10,3 +11,17 @@
 10	Atun en Lata	24.5	35	Abarrotes	🐟	0	
 11	Manzana Roja kg	45.0	49	Frutas	🍎	0	
 12	Agua Natural 1.5L	12.0	89	Bebidas	💧	0	C:\\Users\\javie\\git\\Producto_Integrador\\data\\imagenes\\producto_12.jpg
+=======
+1	Leche Entera 1L	22.5	44	Lacteos	🥛	0	
+2	Pan Blanco Bolsa	38.0	18	Panaderia	🍞	0	
+3	Arroz 1kg	28.9	59	Abarrotes	🍚	0	
+4	Aceite Vegetal 1L	42.0	29	Abarrotes	🫒	0	
+5	Coca-Cola 600ml	18.5	80	Bebidas	🥤	0	
+6	Sabritas Original	19.0	54	Snacks	🥔	0	
+7	Huevo Carton 12pz	52.0	25	Lacteos	🥚	0	
+8	Jabon de Barra	15.0	40	Limpieza	🧼	0	
+9	Papel Higienico 4 rollos	35.0	18	Limpieza	🧻	0	
+10	Atun en Lata	24.5	35	Abarrotes	🐟	0	
+11	Manzana Roja kg	45.0	50	Frutas	🍎	0	
+12	Agua Natural 1.5L	12.0	100	Bebidas	💧	0	
+>>>>>>> branch 'main' of https://github.com/JavierVenegas8108/Producto_Integrador

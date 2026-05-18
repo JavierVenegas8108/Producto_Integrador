@@ -177,16 +177,35 @@ public class SistemaPos {
         System.out.println("Sesion cerrada");
     }
 
-    /** Filtra productos por texto de busqueda. */
+    /**
+     * Filtra productos: ID exacto si el texto es numerico; nombre parcial (contains) en otro caso.
+     */
     public List<Producto> buscarProductos(String texto) {
         if (texto == null || texto.trim().isEmpty()) {
             return new ArrayList<>(productos);
         }
-        String filtro = texto.trim().toLowerCase();
+        String filtro = texto.trim();
+        Integer idBuscado = parsearIdExacto(filtro);
+        if (idBuscado != null) {
+            return productos.stream()
+                    .filter(p -> p.getId() == idBuscado)
+                    .collect(Collectors.toList());
+        }
+        String filtroNombre = filtro.toLowerCase();
         return productos.stream()
-                .filter(p -> p.getNombre().toLowerCase().contains(filtro)
-                        || p.getCategoria().toLowerCase().contains(filtro))
+                .filter(p -> p.getNombre().toLowerCase().contains(filtroNombre))
                 .collect(Collectors.toList());
+    }
+
+    private static Integer parsearIdExacto(String texto) {
+        if (texto == null || !texto.matches("\\d+")) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(texto);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /** Agrega producto al ticket actual validando stock. */
