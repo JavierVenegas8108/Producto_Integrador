@@ -147,6 +147,25 @@ public class ControladorPrincipal {
             JOptionPane.showMessageDialog(vistaPrincipal,
                     "Venta cobrada exitosamente", "Operacion exitosa",
                     JOptionPane.INFORMATION_MESSAGE);
+            
+            StringBuilder alertaBajoStock = new StringBuilder();
+            
+            for (com.abarrotespro.modelo.Producto p : modelo.getProductos()) {
+                if (p.getStock() <= p.getStockMinimo()) {
+                    alertaBajoStock.append("• ").append(p.getNombre())
+                                   .append(" (Stock actual: ").append(p.getStock())
+                                   .append(" | Mínimo: ").append(p.getStockMinimo()).append(")\n");
+                }
+            }
+            
+            
+            if (alertaBajoStock.length() > 0) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "⚠️ ¡Atención! Los siguientes productos están en stock mínimo o agotados:\n\n" + alertaBajoStock.toString(),
+                        "Alerta de Inventario Escaso",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+            
             refrescarVenta();
             refrescarCorte();
         }
@@ -190,17 +209,62 @@ public class ControladorPrincipal {
                     refrescarInventario();
                     refrescarCatalogo();
                 });
+        panel.alEditarProducto(this::mostrarDialogoEditarProducto);
     }
 
+    private void mostrarDialogoEditarProducto(com.abarrotespro.modelo.Producto producto) {
+        JTextField nombre = new JTextField(producto.getNombre());
+        JTextField precio = new JTextField(String.valueOf(producto.getPrecio()));
+        JTextField stockMinimo = new JTextField(String.valueOf(producto.getStockMinimo()));
+
+        Object[] campos = {
+                "Nombre del Producto:", nombre,
+                "Precio ($):", precio,
+                "Stock Mínimo de Alerta:", stockMinimo
+        };
+
+        int opcion = JOptionPane.showConfirmDialog(vistaPrincipal, campos,
+                "Editar Producto: " + producto.getNombre(), JOptionPane.OK_CANCEL_OPTION);
+                
+        if (opcion == JOptionPane.OK_OPTION) {
+            try {
+                String nom = nombre.getText().trim();
+                double pre = Double.parseDouble(precio.getText().trim());
+                int stkMin = Integer.parseInt(stockMinimo.getText().trim());
+
+                if (nom.isEmpty() || pre < 0 || stkMin < 0) {
+                    throw new IllegalArgumentException();
+                }
+
+                producto.setNombre(nom);
+                producto.setPrecio(pre);
+                producto.setStockMinimo(stkMin); 
+
+                refrescarInventario();
+                refrescarCatalogo();
+
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Producto actualizado correctamente", "Operación exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+                        
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Datos inválidos. Asegúrese de ingresar números correctos.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
     private void mostrarDialogoNuevoProducto() {
         JTextField nombre = new JTextField();
         JTextField precio = new JTextField();
         JTextField stock = new JTextField();
+        JTextField stockMinimo = new JTextField();
 
         Object[] campos = {
                 "Nombre:", nombre,
                 "Precio:", precio,
-                "Stock inicial:", stock
+                "Stock inicial:", stock,
+                "Stock mínimo de alerta:", stockMinimo 
         };
 
         int opcion = JOptionPane.showConfirmDialog(vistaPrincipal, campos,
@@ -210,10 +274,16 @@ public class ControladorPrincipal {
                 String nom = nombre.getText().trim();
                 double pre = Double.parseDouble(precio.getText().trim());
                 int stk = Integer.parseInt(stock.getText().trim());
-                if (nom.isEmpty() || pre < 0 || stk < 0) {
+                int stkMin = Integer.parseInt(stockMinimo.getText().trim()); 
+
+                
+                if (nom.isEmpty() || pre < 0 || stk < 0 || stkMin < 0) {
                     throw new IllegalArgumentException();
                 }
-                modelo.crearProducto(nom, pre, stk);
+                
+               
+                modelo.crearProducto(nom, pre, stk, stkMin); 
+                
                 refrescarInventario();
                 refrescarCatalogo();
                 JOptionPane.showMessageDialog(vistaPrincipal,
@@ -221,7 +291,7 @@ public class ControladorPrincipal {
                         JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(vistaPrincipal,
-                        "Datos invalidos", "Error",
+                        "Datos invalidos. Asegúrese de ingresar números válidos.", "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
         }

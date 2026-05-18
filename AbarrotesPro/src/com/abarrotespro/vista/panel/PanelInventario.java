@@ -27,7 +27,8 @@ public class PanelInventario extends JPanel {
     private List<Producto> productosActuales;
     private BiConsumer<Integer, Integer> callbackSurtir;
     private Consumer<Integer> callbackEliminar;
-
+    private Consumer<Producto> callbackEditar;
+    
     public PanelInventario() {
         setBackground(Colores.FONDO_APP);
         setLayout(new BorderLayout());
@@ -67,7 +68,7 @@ public class PanelInventario extends JPanel {
     }
 
     private JScrollPane crearTabla() {
-        String[] columnas = {"ITEM", "NOMBRE", "PRECIO", "STOCK ACTUAL", "ACCIONES"};
+        String[] columnas = {"ITEM", "NOMBRE", "PRECIO", "STOCK ACTUAL", "ST. MÍNIMO", "ACCIONES"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -89,30 +90,41 @@ public class PanelInventario extends JPanel {
         header.setPreferredSize(new Dimension(header.getWidth(), 42));
         header.setReorderingAllowed(false);
 
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(70);
-        tabla.getColumnModel().getColumn(2).setPreferredWidth(90);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(120);
-        tabla.getColumnModel().getColumn(4).setPreferredWidth(180);
+        tabla.getColumnModel().getColumn(0).setPreferredWidth(60); 
+        tabla.getColumnModel().getColumn(1).setPreferredWidth(140); 
+        tabla.getColumnModel().getColumn(2).setPreferredWidth(80);  
+        tabla.getColumnModel().getColumn(3).setPreferredWidth(100); 
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(100); 
+        tabla.getColumnModel().getColumn(5).setPreferredWidth(160);  
 
         tabla.getColumnModel().getColumn(2).setCellRenderer(new CeldaPrecioRenderer());
         tabla.getColumnModel().getColumn(3).setCellRenderer(new CeldaStockRenderer());
-        tabla.getColumnModel().getColumn(4).setCellRenderer(new CeldaAccionesRenderer());
+        tabla.getColumnModel().getColumn(4).setCellRenderer(new CeldaStockMinimoRenderer()); 
+        tabla.getColumnModel().getColumn(5).setCellRenderer(new CeldaAccionesRenderer());
 
         tabla.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int fila = tabla.rowAtPoint(e.getPoint());
                 int columna = tabla.columnAtPoint(e.getPoint());
-                if (fila < 0 || columna != 4 || productosActuales == null || fila >= productosActuales.size()) {
+                
+                if (fila < 0 || productosActuales == null || fila >= productosActuales.size()) {
                     return;
                 }
-                Rectangle celda = tabla.getCellRect(fila, columna, true);
-                int mitad = celda.x + celda.width / 2;
+                
                 Producto producto = productosActuales.get(fila);
-                if (e.getX() < mitad) {
-                    solicitarSurtido(producto);
-                } else {
-                    confirmarEliminacion(producto);
+
+                if (columna == 5) {
+                    Rectangle celda = tabla.getCellRect(fila, columna, true);
+                    int mitad = celda.x + celda.width / 2;
+                    if (e.getX() < mitad) {
+                        solicitarSurtido(producto);
+                    } else {
+                        confirmarEliminacion(producto);
+                    }
+                } 
+                else if (e.getClickCount() == 2) {
+                    solicitarEdicion(producto);
                 }
             }
         });
@@ -151,7 +163,16 @@ public class PanelInventario extends JPanel {
     public JButton getBotonNuevo() {
         return botonNuevo;
     }
-
+    
+    public void alEditarProducto(Consumer<Producto> alEditar) {
+        this.callbackEditar = alEditar;
+    }
+    
+    private void solicitarEdicion(Producto producto) {
+        if (callbackEditar != null) {
+            callbackEditar.accept(producto);
+        }
+    }
     public void actualizarTabla(List<Producto> productos,
                                 BiConsumer<Integer, Integer> alSurtir,
                                 Consumer<Integer> alEliminar) {
@@ -166,6 +187,7 @@ public class PanelInventario extends JPanel {
                     p.getNombre(),
                     ComponentesUi.formatearMoneda(p.getPrecio()),
                     p.getStock(),
+                    p.getStockMinimo(),
                     "surtir|eliminar"
             });
         }
@@ -184,13 +206,28 @@ public class PanelInventario extends JPanel {
         }
     }
 
-    private static class CeldaStockRenderer extends DefaultTableCellRenderer {
+    private class CeldaStockRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
+            
             JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8));
             panel.setOpaque(true);
             panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
+            
+            if (productosActuales != null && row < productosActuales.size()) {
+                Producto p = productosActuales.get(row);
+                
+                if (p.getStock() <= p.getStockMinimo()) {
+                    JLabel lblAlerta = ComponentesUi.crearEtiquetaStock((Integer) value);
+                    lblAlerta.setForeground(Color.RED); 
+                    lblAlerta.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                    panel.setBackground(new Color(255, 230, 230)); 
+                    panel.add(lblAlerta);
+                    return panel;
+                }
+            }
+            
             panel.add(ComponentesUi.crearEtiquetaStock((Integer) value));
             return panel;
         }
@@ -220,4 +257,17 @@ public class PanelInventario extends JPanel {
             return panel;
         }
     }
+    private static class CeldaStockMinimoRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+            lbl.setForeground(Colores.GRIS_TEXTO);
+            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            return lbl;
+        }
+    }
+    
 }
