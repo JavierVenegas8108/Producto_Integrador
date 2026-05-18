@@ -233,6 +233,7 @@ public class ControladorPrincipal {
         DialogosInventario.mostrarEditarProducto(vistaPrincipal, producto).ifPresent(datos -> {
             producto.setNombre(datos.nombre());
             producto.setPrecio(datos.precio());
+            producto.setStockMinimo(datos.stockMinimo());
             modelo.registrarCambioInventario();
             refrescarInventario();
             refrescarCatalogo();
