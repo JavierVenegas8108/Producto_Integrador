@@ -15,6 +15,7 @@ public class SistemaPos {
 
     private final List<Usuario> usuarios;
     private final List<Producto> productos;
+    private final List<Proveedor> proveedores;
     private final List<Venta> ventasDelDia;
     private final List<Corte> historialCortes;
     private final PosPersistencia persistencia;
@@ -26,16 +27,19 @@ public class SistemaPos {
     private int contadorVentas;
     private int contadorProductos;
     private int contadorCortes;
+    private int contadorProveedores;
 
     public SistemaPos() {
         usuarios = new ArrayList<>();
         productos = new ArrayList<>();
+        proveedores = new ArrayList<>();
         ventasDelDia = new ArrayList<>();
         historialCortes = new ArrayList<>();
         persistencia = new PosPersistencia();
         contadorVentas = 0;
         contadorProductos = 0;
         contadorCortes = 0;
+        contadorProveedores = 0;
         totalEnCaja = 1250.50;
         entradasManuales = 200.00;
         usuarios.add(new Usuario("admin", "admin123", "Administrador", "AD"));
@@ -55,9 +59,11 @@ public class SistemaPos {
 
     public void cargarEstado(EstadoPersistido estado) {
         productos.clear();
+        proveedores.clear();
         ventasDelDia.clear();
         historialCortes.clear();
         productos.addAll(estado.getProductos());
+        proveedores.addAll(estado.getProveedores());
         ventasDelDia.addAll(estado.getVentas());
         historialCortes.addAll(estado.getCortes());
         totalEnCaja = estado.getTotalEnCaja();
@@ -65,13 +71,14 @@ public class SistemaPos {
         contadorVentas = estado.getContadorVentas();
         contadorProductos = estado.getContadorProductos();
         contadorCortes = estado.getContadorCortes();
+        contadorProveedores = estado.getContadorProveedores();
     }
 
     public EstadoPersistido exportarEstado() {
         return new EstadoPersistido(
-                productos, ventasDelDia, historialCortes,
+                productos, ventasDelDia, historialCortes, proveedores,
                 totalEnCaja, entradasManuales,
-                contadorVentas, contadorProductos, contadorCortes);
+                contadorVentas, contadorProductos, contadorCortes, contadorProveedores);
     }
 
     private void persistir() {
@@ -94,6 +101,18 @@ public class SistemaPos {
 
         historialCortes.add(new Corte(980.00, "Administrador"));
         historialCortes.add(new Corte(1120.75, "Administrador"));
+
+        agregarProveedor("Distribuidora La Central", "Juan Perez", "555-1001",
+                "contacto@lacentral.com", "Av. Reforma 120", "Lunes, Miercoles", true);
+        agregarProveedor("Abarrotes del Norte", "Maria Lopez", "555-2045",
+                "ventas@norte.com", "Calle 5 de Mayo 45", "Martes, Jueves", true);
+    }
+
+    private void agregarProveedor(String razon, String contacto, String telefono,
+            String correo, String direccion, String dias, boolean activo) {
+        contadorProveedores++;
+        proveedores.add(new Proveedor(contadorProveedores, razon, contacto, telefono,
+                correo, direccion, dias, activo));
     }
 
     private void agregarProducto(String nombre, double precio, int stock, String categoria, String emoji) {
@@ -107,6 +126,10 @@ public class SistemaPos {
 
     public List<Producto> getProductos() {
         return productos;
+    }
+
+    public List<Proveedor> getProveedores() {
+        return proveedores;
     }
 
     public List<Venta> getVentasDelDia() {
@@ -154,16 +177,35 @@ public class SistemaPos {
         System.out.println("Sesion cerrada");
     }
 
-    /** Filtra productos por texto de busqueda. */
+    /**
+     * Filtra productos: ID exacto si el texto es numerico; nombre parcial (contains) en otro caso.
+     */
     public List<Producto> buscarProductos(String texto) {
         if (texto == null || texto.trim().isEmpty()) {
             return new ArrayList<>(productos);
         }
-        String filtro = texto.trim().toLowerCase();
+        String filtro = texto.trim();
+        Integer idBuscado = parsearIdExacto(filtro);
+        if (idBuscado != null) {
+            return productos.stream()
+                    .filter(p -> p.getId() == idBuscado)
+                    .collect(Collectors.toList());
+        }
+        String filtroNombre = filtro.toLowerCase();
         return productos.stream()
-                .filter(p -> p.getNombre().toLowerCase().contains(filtro)
-                        || p.getCategoria().toLowerCase().contains(filtro))
+                .filter(p -> p.getNombre().toLowerCase().contains(filtroNombre))
                 .collect(Collectors.toList());
+    }
+
+    private static Integer parsearIdExacto(String texto) {
+        if (texto == null || !texto.matches("\\d+")) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(texto);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /** Agrega producto al ticket actual validando stock. */
@@ -233,16 +275,70 @@ public class SistemaPos {
     }
 
     public Producto crearProducto(String nombre, double precio, int stock, int stockMinimo) {
+        return crearProducto(nombre, precio, stock, stockMinimo, null);
+    }
+
+    public Producto crearProducto(String nombre, double precio, int stock, int stockMinimo, String rutaImagen) {
         contadorProductos++;
         Producto nuevo = new Producto(contadorProductos, nombre, precio, stock, "General", "📦");
         nuevo.setStockMinimo(stockMinimo);
+        nuevo.setRutaImagen(rutaImagen);
         productos.add(nuevo);
         persistir();
         return nuevo;
     }
 
+    public void actualizarProducto(Producto producto) {
+        persistir();
+    }
+
     public void registrarCambioInventario() {
         persistir();
+    }
+
+    public List<Proveedor> buscarProveedores(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return new ArrayList<>(proveedores);
+        }
+        String filtro = texto.trim().toLowerCase();
+        return proveedores.stream()
+                .filter(p -> p.getRazonSocial().toLowerCase().contains(filtro)
+                        || p.getNombreContacto().toLowerCase().contains(filtro)
+                        || p.getTelefono().contains(filtro))
+                .collect(Collectors.toList());
+    }
+
+    public Proveedor buscarProveedorPorId(int id) {
+        return proveedores.stream().filter(p -> p.getId() == id).findFirst().orElse(null);
+    }
+
+    public Proveedor guardarProveedor(Proveedor proveedor) {
+        if (proveedor.getId() <= 0) {
+            contadorProveedores++;
+            proveedor.setId(contadorProveedores);
+            proveedores.add(proveedor);
+        } else {
+            Proveedor existente = buscarProveedorPorId(proveedor.getId());
+            if (existente != null) {
+                existente.setRazonSocial(proveedor.getRazonSocial());
+                existente.setNombreContacto(proveedor.getNombreContacto());
+                existente.setTelefono(proveedor.getTelefono());
+                existente.setCorreo(proveedor.getCorreo());
+                existente.setDireccion(proveedor.getDireccion());
+                existente.setDiasVisita(proveedor.getDiasVisita());
+                existente.setActivo(proveedor.isActivo());
+            }
+        }
+        persistir();
+        return proveedor;
+    }
+
+    public void desactivarProveedor(int id) {
+        Proveedor p = buscarProveedorPorId(id);
+        if (p != null) {
+            p.setActivo(false);
+            persistir();
+        }
     }
 
     public double getVentasHoy() {

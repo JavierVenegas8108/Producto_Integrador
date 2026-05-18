@@ -14,12 +14,17 @@ import javax.swing.UIManager;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.modelo.servicio.GeneradorTicket;
+import com.abarrotespro.modelo.servicio.LectorTickets;
+import com.abarrotespro.vista.panel.PanelConfiguracion;
+import com.abarrotespro.vista.panel.PanelTickets;
+import com.abarrotespro.vista.util.TemaUi;
 import com.abarrotespro.vista.VistaLogin;
 import com.abarrotespro.vista.VistaPrincipal;
 import com.abarrotespro.vista.panel.PanelCorte;
 import com.abarrotespro.vista.panel.PanelInventario;
 import com.abarrotespro.vista.panel.PanelVenta;
 import com.abarrotespro.vista.util.DialogosInventario;
+import com.abarrotespro.vista.util.GestorImagenProducto;
 
 /**
  * Controlador principal: enlaza vistas con el modelo y coordina la logica de negocio.
@@ -29,6 +34,7 @@ public class ControladorPrincipal {
     private final SistemaPos modelo;
     private VistaLogin vistaLogin;
     private VistaPrincipal vistaPrincipal;
+    private ProveedorController controladorProveedores;
 
     public ControladorPrincipal() {
         this.modelo = new SistemaPos();
@@ -80,8 +86,10 @@ public class ControladorPrincipal {
         configurarNavegacion();
         configurarVenta();
         configurarInventario();
+        configurarProveedores();
         configurarCorte();
-        configurarCerrarSesion();
+        configurarTickets();
+        configurarConfiguracion();
 
         vistaPrincipal.mostrarModulo(VistaPrincipal.CARD_VENTA, "Venta");
         refrescarVenta();
@@ -108,11 +116,25 @@ public class ControladorPrincipal {
                     refrescarVenta();
                 } else if (VistaPrincipal.CARD_INVENTARIO.equals(card)) {
                     refrescarInventario();
+                } else if (VistaPrincipal.CARD_PROVEEDORES.equals(card)) {
+                    if (controladorProveedores != null) {
+                        controladorProveedores.refrescarTabla();
+                    }
                 } else if (VistaPrincipal.CARD_CORTE.equals(card)) {
                     refrescarCorte();
+                } else if (VistaPrincipal.CARD_TICKETS.equals(card)) {
+                    refrescarTickets();
                 }
             });
         });
+    }
+
+    private void configurarProveedores() {
+        controladorProveedores = new ProveedorController(
+                modelo,
+                vistaPrincipal.getPanelProveedores(),
+                vistaPrincipal);
+        controladorProveedores.inicializar();
     }
 
     private void configurarVenta() {
@@ -185,6 +207,7 @@ public class ControladorPrincipal {
             
             refrescarVenta();
             refrescarCorte();
+            refrescarTickets();
         }
     }
 
@@ -231,47 +254,32 @@ public class ControladorPrincipal {
 
     private void mostrarDialogoEditarProducto(com.abarrotespro.modelo.Producto producto) {
         DialogosInventario.mostrarEditarProducto(vistaPrincipal, producto).ifPresent(datos -> {
-            producto.setNombre(datos.nombre());
-            producto.setPrecio(datos.precio());
-            producto.setStockMinimo(datos.stockMinimo());
-            modelo.registrarCambioInventario();
-            refrescarInventario();
-            refrescarCatalogo();
-            JOptionPane.showMessageDialog(vistaPrincipal,
-                    "Producto actualizado correctamente", "Operacion exitosa",
-                    JOptionPane.INFORMATION_MESSAGE);
+            try {
+                producto.setNombre(datos.nombre());
+                producto.setPrecio(datos.precio());
+                producto.setStockMinimo(datos.stockMinimo());
+                aplicarImagenProducto(producto, datos);
+                modelo.actualizarProducto(producto);
+                refrescarInventario();
+                refrescarCatalogo();
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Producto actualizado correctamente", "Operacion exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "No se pudo guardar la imagen del producto.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         });
     }
+
     private void mostrarDialogoNuevoProducto() {
-        JTextField nombre = new JTextField();
-        JTextField precio = new JTextField();
-        JTextField stock = new JTextField();
-        JTextField stockMinimo = new JTextField();
-
-        Object[] campos = {
-                "Nombre:", nombre,
-                "Precio:", precio,
-                "Stock inicial:", stock,
-                "Stock mínimo de alerta:", stockMinimo 
-        };
-
-        int opcion = JOptionPane.showConfirmDialog(vistaPrincipal, campos,
-                "Nuevo Producto", JOptionPane.OK_CANCEL_OPTION);
-        if (opcion == JOptionPane.OK_OPTION) {
+        DialogosInventario.mostrarNuevoProducto(vistaPrincipal).ifPresent(datos -> {
             try {
-                String nom = nombre.getText().trim();
-                double pre = Double.parseDouble(precio.getText().trim());
-                int stk = Integer.parseInt(stock.getText().trim());
-                int stkMin = Integer.parseInt(stockMinimo.getText().trim()); 
-
-                
-                if (nom.isEmpty() || pre < 0 || stk < 0 || stkMin < 0) {
-                    throw new IllegalArgumentException();
-                }
-                
-               
-                modelo.crearProducto(nom, pre, stk, stkMin); 
-                
+                com.abarrotespro.modelo.Producto nuevo = modelo.crearProducto(
+                        datos.nombre(), datos.precio(), datos.stockInicial(), datos.stockMinimo(), null);
+                aplicarImagenProducto(nuevo, datos);
+                modelo.actualizarProducto(nuevo);
                 refrescarInventario();
                 refrescarCatalogo();
                 JOptionPane.showMessageDialog(vistaPrincipal,
@@ -279,9 +287,19 @@ public class ControladorPrincipal {
                         JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(vistaPrincipal,
-                        "Datos invalidos. Asegúrese de ingresar números válidos.", "Error",
+                        "No se pudo guardar la imagen del producto.", "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
+        });
+    }
+
+    private void aplicarImagenProducto(com.abarrotespro.modelo.Producto producto,
+            DialogosInventario.DatosFormularioProducto datos) throws Exception {
+        if (datos.archivoImagenNuevo() != null) {
+            String ruta = GestorImagenProducto.guardarImagen(datos.archivoImagenNuevo(), producto.getId());
+            producto.setRutaImagen(ruta);
+        } else if (datos.rutaImagen() != null && !datos.rutaImagen().isBlank()) {
+            producto.setRutaImagen(datos.rutaImagen());
         }
     }
 
@@ -330,19 +348,47 @@ public class ControladorPrincipal {
         panel.actualizarHistorial(modelo.getHistorialCortes());
     }
 
-    private void configurarCerrarSesion() {
-        JButton btn = vistaPrincipal.getBotonCerrarSesion();
-        if (btn != null) {
-            btn.addActionListener(e -> {
-                int confirm = JOptionPane.showConfirmDialog(vistaPrincipal,
-                        "Desea cerrar sesion?", "Confirmar",
-                        JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    modelo.cerrarSesion();
-                    vistaPrincipal.dispose();
-                    mostrarLogin();
-                }
-            });
-        }
+    private void configurarTickets() {
+        PanelTickets panel = vistaPrincipal.getPanelTickets();
+        panel.getListaArchivos().addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) {
+                return;
+            }
+            String seleccion = panel.getListaArchivos().getSelectedValue();
+            if (seleccion == null) {
+                panel.mostrarContenido("");
+                return;
+            }
+            try {
+                panel.mostrarContenido(LectorTickets.leerContenido(seleccion));
+            } catch (Exception ex) {
+                panel.mostrarContenido("No se pudo leer el archivo:\n" + ex.getMessage());
+            }
+        });
+    }
+
+    private void refrescarTickets() {
+        vistaPrincipal.getPanelTickets().actualizarLista(LectorTickets.listarArchivos());
+    }
+
+    private void configurarConfiguracion() {
+        PanelConfiguracion panel = vistaPrincipal.getPanelConfiguracion();
+
+        panel.getToggleModoOscuro().addActionListener(e -> {
+            boolean oscuro = panel.getToggleModoOscuro().isSelected();
+            TemaUi.aplicarModoOscuro(oscuro);
+            vistaPrincipal.refrescarTema();
+        });
+
+        panel.getBotonCerrarSesion().addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(vistaPrincipal,
+                    "Desea cerrar sesion?", "Confirmar",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                modelo.cerrarSesion();
+                vistaPrincipal.dispose();
+                mostrarLogin();
+            }
+        });
     }
 }

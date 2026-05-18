@@ -12,6 +12,7 @@ public class Producto {
     private String categoria;
     private String emoji;
     private int stockMinimo;
+    private String rutaImagen;
     
     public Producto(int id, String nombre, double precio, int stock, String categoria, String emoji) {
         this.id = id;
@@ -85,6 +86,15 @@ public class Producto {
 	public void setStockMinimo(int stockMinimo) {
 		this.stockMinimo = stockMinimo;
 	}
+
+    public String getRutaImagen() {
+        return rutaImagen;
+    }
+
+    public void setRutaImagen(String rutaImagen) {
+        this.rutaImagen = rutaImagen;
+    }
+
     /** Reduce el stock si hay unidades disponibles. */
     public boolean reducirStock(int cantidad) {
         if (cantidad <= 0 || stock < cantidad) {

@@ -46,7 +46,7 @@ public class PanelVenta extends JPanel {
         busqueda.setBorder(new EmptyBorder(0, 0, 8, 0));
 
         Icon iconoLupa = IconosUi.crear(IconosUi.TipoIcono.BUSQUEDA, 16, Colores.GRIS_TEXTO);
-        campoBusqueda = ComponentesUi.crearCampoTextoConIcono(iconoLupa, "Buscar producto...");
+        campoBusqueda = ComponentesUi.crearCampoTextoConIcono(iconoLupa, "Buscar por nombre o ID...");
         campoBusqueda.setPreferredSize(new Dimension(300, 42));
 
         busqueda.add(campoBusqueda, BorderLayout.CENTER);
@@ -67,7 +67,7 @@ public class PanelVenta extends JPanel {
     }
 
     private JPanel crearPanelTicket() {
-        JPanel panel = ComponentesUi.crearPanelRedondeado(Color.WHITE, 16);
+        JPanel panel = ComponentesUi.crearPanelRedondeado(Colores.FONDO_TARJETA, 16);
         panel.setLayout(new BorderLayout());
         panel.setPreferredSize(new Dimension(320, 0));
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
@@ -154,7 +154,7 @@ public class PanelVenta extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setColor(new Color(248, 250, 252));
+                g2.setColor(Colores.FONDO_LINEA_TICKET);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
                 g2.dispose();
             }
@@ -183,9 +183,9 @@ public class PanelVenta extends JPanel {
         info.add(nombre);
         info.add(detalle);
 
-        JButton eliminar = new JButton("🗑");
-        eliminar.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        eliminar.setForeground(Colores.ROJO);
+        JButton eliminar = new JButton(IconosUi.crear(IconosUi.TipoIcono.BASURA, 16, Colores.ROJO));
+        eliminar.setToolTipText("Quitar del ticket");
+        eliminar.setPreferredSize(new Dimension(32, 28));
         eliminar.setBorderPainted(false);
         eliminar.setContentAreaFilled(false);
         eliminar.setFocusPainted(false);
