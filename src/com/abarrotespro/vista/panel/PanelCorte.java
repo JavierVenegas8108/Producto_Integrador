@@ -1,14 +1,15 @@
 package com.abarrotespro.vista.panel;
 
-import com.abarrotespro.modelo.Corte;
-import com.abarrotespro.vista.util.Colores;
-import com.abarrotespro.vista.util.ComponentesUi;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 import java.util.List;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
+import com.abarrotespro.modelo.Corte;
+import com.abarrotespro.vista.util.Colores;
+import com.abarrotespro.vista.util.ComponentesUi;
 
 /**
  * Modulo de corte de caja con resumen y historial.

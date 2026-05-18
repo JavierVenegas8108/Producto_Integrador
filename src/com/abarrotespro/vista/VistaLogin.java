@@ -1,11 +1,12 @@
 package com.abarrotespro.vista;
 
-import com.abarrotespro.vista.util.Colores;
-import com.abarrotespro.vista.util.ComponentesUi;
+import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
+
+import com.abarrotespro.vista.util.Colores;
+import com.abarrotespro.vista.util.ComponentesUi;
 
 /**
  * Pantalla de inicio de sesion del punto de venta.

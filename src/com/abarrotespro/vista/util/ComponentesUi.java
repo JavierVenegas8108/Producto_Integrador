@@ -1,9 +1,10 @@
 package com.abarrotespro.vista.util;
 
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Fabrica de componentes visuales reutilizables con estilo moderno.
@@ -30,6 +31,35 @@ public final class ComponentesUi {
                 return false;
             }
         };
+    }
+
+    public static JButton crearBotonSecundario(String texto, int alto) {
+        JButton boton = new JButton(texto) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color fondo = getModel().isRollover() ? new Color(241, 245, 249) : new Color(248, 250, 252);
+                g2.setColor(fondo);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 12, 12));
+                g2.setColor(Colores.GRIS_BORDE);
+                g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
+                g2.setColor(Colores.GRIS_TEXTO);
+                g2.setFont(getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = (getHeight() + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(getText(), x, y);
+                g2.dispose();
+            }
+        };
+        boton.setPreferredSize(new Dimension(120, alto));
+        boton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        boton.setFocusPainted(false);
+        boton.setBorderPainted(false);
+        boton.setContentAreaFilled(false);
+        boton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return boton;
     }
 
     public static JButton crearBotonPrimario(String texto, int alto) {

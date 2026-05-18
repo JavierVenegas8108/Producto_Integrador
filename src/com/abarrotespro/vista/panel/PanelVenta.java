@@ -1,18 +1,19 @@
 package com.abarrotespro.vista.panel;
 
-import com.abarrotespro.modelo.LineaVenta;
-import com.abarrotespro.modelo.Producto;
-import com.abarrotespro.modelo.Venta;
-import com.abarrotespro.vista.util.Colores;
-import com.abarrotespro.vista.util.ComponentesUi;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.geom.RoundRectangle2D;
 import java.util.List;
 import java.util.function.Consumer;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
+import com.abarrotespro.modelo.LineaVenta;
+import com.abarrotespro.modelo.Producto;
+import com.abarrotespro.modelo.Venta;
+import com.abarrotespro.vista.util.Colores;
+import com.abarrotespro.vista.util.ComponentesUi;
 
 /**
  * Modulo de venta: catalogo de productos y ticket activo.
@@ -60,10 +61,11 @@ public class PanelVenta extends JPanel {
 
         contenedorProductos = new JPanel();
         contenedorProductos.setOpaque(false);
-        contenedorProductos.setLayout(new FlowLayout(FlowLayout.LEFT, 12, 12));
+        contenedorProductos.setLayout(new GridLayout(0, 5, 12, 12));
 
         JScrollPane scroll = new JScrollPane(contenedorProductos);
         scroll.setBorder(null);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
@@ -126,7 +128,10 @@ public class PanelVenta extends JPanel {
     public void actualizarProductos(List<Producto> productos, ActionListener alAgregar) {
         contenedorProductos.removeAll();
         for (Producto p : productos) {
-            contenedorProductos.add(new TarjetaProducto(p, alAgregar));
+            JPanel celda = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+            celda.setOpaque(false);
+            celda.add(new TarjetaProducto(p, alAgregar));
+            contenedorProductos.add(celda);
         }
         contenedorProductos.revalidate();
         contenedorProductos.repaint();

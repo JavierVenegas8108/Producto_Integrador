@@ -1,10 +1,11 @@
 package com.abarrotespro.vista.panel;
 
-import com.abarrotespro.vista.util.Colores;
+import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
+
+import com.abarrotespro.vista.util.Colores;
 
 /**
  * Panel placeholder para modulos aun no implementados.

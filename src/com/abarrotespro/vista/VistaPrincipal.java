@@ -1,13 +1,18 @@
 package com.abarrotespro.vista;
 
-import com.abarrotespro.vista.panel.*;
-import com.abarrotespro.vista.util.Colores;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
+import com.abarrotespro.vista.panel.PanelCorte;
+import com.abarrotespro.vista.panel.PanelEnDesarrollo;
+import com.abarrotespro.vista.panel.PanelInventario;
+import com.abarrotespro.vista.panel.PanelVenta;
+import com.abarrotespro.vista.util.Colores;
+import com.abarrotespro.vista.util.IconosUi;
 
 /**
  * Ventana principal con sidebar, barra superior y paneles modulares (CardLayout).
@@ -75,9 +80,9 @@ public class VistaPrincipal extends JFrame {
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Colores.GRIS_BORDE));
 
-        JPanel logo = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
+        JPanel logo = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 14));
         logo.setOpaque(false);
-        logo.setMaximumSize(new Dimension(220, 70));
+        logo.setMaximumSize(new Dimension(220, 58));
         JLabel icono = new JLabel("🛒");
         icono.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 28));
         JLabel nombre = new JLabel("Abarrotes Pro");
@@ -86,14 +91,14 @@ public class VistaPrincipal extends JFrame {
         logo.add(icono);
         logo.add(nombre);
         sidebar.add(logo);
-        sidebar.add(Box.createVerticalStrut(8));
+        sidebar.add(Box.createVerticalStrut(4));
 
-        agregarBotonNav(sidebar, "Venta", CARD_VENTA, "🛍");
-        agregarBotonNav(sidebar, "Inventario", CARD_INVENTARIO, "📦");
-        agregarBotonNav(sidebar, "Tickets", CARD_TICKETS, "🎫");
-        agregarBotonNav(sidebar, "Proveedores", CARD_PROVEEDORES, "🚚");
-        agregarBotonNav(sidebar, "Corte", CARD_CORTE, "💰");
-        agregarBotonNav(sidebar, "Configuracion", CARD_CONFIG, "⚙");
+        agregarBotonNav(sidebar, "Venta", CARD_VENTA, IconosUi.TipoIcono.VENTA);
+        agregarBotonNav(sidebar, "Inventario", CARD_INVENTARIO, IconosUi.TipoIcono.INVENTARIO);
+        agregarBotonNav(sidebar, "Tickets", CARD_TICKETS, IconosUi.TipoIcono.TICKETS);
+        agregarBotonNav(sidebar, "Proveedores", CARD_PROVEEDORES, IconosUi.TipoIcono.PROVEEDORES);
+        agregarBotonNav(sidebar, "Corte", CARD_CORTE, IconosUi.TipoIcono.CORTE);
+        agregarBotonNav(sidebar, "Configuracion", CARD_CONFIG, IconosUi.TipoIcono.CONFIGURACION);
 
         sidebar.add(Box.createVerticalGlue());
 
@@ -110,17 +115,28 @@ public class VistaPrincipal extends JFrame {
         return sidebar;
     }
 
-    private void agregarBotonNav(JPanel sidebar, String texto, String card, String icono) {
-        JButton btn = new JButton(icono + "   " + texto);
+    private void agregarBotonNav(JPanel sidebar, String texto, String card, IconosUi.TipoIcono tipoIcono) {
+        JButton btn = new JButton();
         btn.setName(card);
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setBorder(new EmptyBorder(12, 24, 12, 24));
+        btn.setLayout(new BorderLayout(10, 0));
+        btn.setBorder(new EmptyBorder(8, 20, 8, 16));
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
-        btn.setMaximumSize(new Dimension(220, 44));
+        btn.setMaximumSize(new Dimension(220, 36));
+        btn.setPreferredSize(new Dimension(220, 36));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        JLabel icono = new JLabel(IconosUi.crear(tipoIcono, 18, Colores.GRIS_TEXTO));
+        icono.setName("iconoNav");
+        JLabel etiqueta = new JLabel(texto);
+        etiqueta.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        etiqueta.setForeground(Colores.NEGRO_TEXTO);
+        etiqueta.setName("textoNav");
+
+        btn.add(icono, BorderLayout.WEST);
+        btn.add(etiqueta, BorderLayout.CENTER);
+
         botonesNav.put(card, btn);
         sidebar.add(btn);
     }
@@ -196,9 +212,34 @@ public class VistaPrincipal extends JFrame {
         botonesNav.forEach((nombre, btn) -> {
             boolean activo = nombre.equals(card);
             btn.setBackground(activo ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
-            btn.setForeground(activo ? Colores.AZUL_PRIMARIO : Colores.NEGRO_TEXTO);
             btn.setOpaque(activo);
+
+            Component[] hijos = btn.getComponents();
+            for (Component hijo : hijos) {
+                if (hijo instanceof JLabel lbl) {
+                    if ("iconoNav".equals(lbl.getName())) {
+                        lbl.setIcon(IconosUi.crear(
+                                iconoNavParaCard(nombre), 18,
+                                activo ? Colores.AZUL_PRIMARIO : Colores.GRIS_TEXTO));
+                    } else if ("textoNav".equals(lbl.getName())) {
+                        lbl.setForeground(activo ? Colores.AZUL_PRIMARIO : Colores.NEGRO_TEXTO);
+                        lbl.setFont(new Font("Segoe UI", activo ? Font.BOLD : Font.PLAIN, 14));
+                    }
+                }
+            }
         });
+    }
+
+    private static IconosUi.TipoIcono iconoNavParaCard(String card) {
+        return switch (card) {
+            case CARD_VENTA -> IconosUi.TipoIcono.VENTA;
+            case CARD_INVENTARIO -> IconosUi.TipoIcono.INVENTARIO;
+            case CARD_TICKETS -> IconosUi.TipoIcono.TICKETS;
+            case CARD_PROVEEDORES -> IconosUi.TipoIcono.PROVEEDORES;
+            case CARD_CORTE -> IconosUi.TipoIcono.CORTE;
+            case CARD_CONFIG -> IconosUi.TipoIcono.CONFIGURACION;
+            default -> IconosUi.TipoIcono.VENTA;
+        };
     }
 
     public void configurarUsuario(String nombre, String iniciales) {

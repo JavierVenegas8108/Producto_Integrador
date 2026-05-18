@@ -1,14 +1,15 @@
 package com.abarrotespro.vista.panel;
 
-import com.abarrotespro.modelo.Producto;
-import com.abarrotespro.vista.util.Colores;
-import com.abarrotespro.vista.util.ComponentesUi;
-
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.geom.RoundRectangle2D;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+
+import com.abarrotespro.modelo.Producto;
+import com.abarrotespro.vista.util.Colores;
+import com.abarrotespro.vista.util.ComponentesUi;
 
 /**
  * Tarjeta visual de un producto en el modulo de venta.

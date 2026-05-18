@@ -182,7 +182,7 @@ public class SistemaPos {
         productos.removeIf(p -> p.getId() == id);
     }
 
-    public Producto crearProducto(String nombre, double precio, int stock) {
+    public Producto crearProducto(String nombre, double precio, int stock, int stockMinimo) {
         contadorProductos++;
         Producto nuevo = new Producto(contadorProductos, nombre, precio, stock, "General", "📦");
         productos.add(nuevo);

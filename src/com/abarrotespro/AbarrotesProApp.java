@@ -1,5 +1,4 @@
 package com.abarrotespro;
-
 import com.abarrotespro.controlador.ControladorPrincipal;
 
 /**
