@@ -11,7 +11,8 @@ import java.awt.geom.RoundRectangle2D;
 public final class IconosUi {
 
     public enum TipoIcono {
-        LAPIZ, BASURA, VENTA, INVENTARIO, TICKETS, PROVEEDORES, CORTE, CONFIGURACION
+        LAPIZ, BASURA, VENTA, INVENTARIO, TICKETS, PROVEEDORES, CORTE, CONFIGURACION,
+        USUARIO, CANDADO, BUSQUEDA
     }
 
     private IconosUi() {
@@ -34,6 +35,9 @@ public final class IconosUi {
                     case PROVEEDORES -> dibujarCamion(g2, tamano);
                     case CORTE -> dibujarPesos(g2, tamano);
                     case CONFIGURACION -> dibujarEngrane(g2, tamano);
+                    case USUARIO -> dibujarUsuario(g2, tamano);
+                    case CANDADO -> dibujarCandado(g2, tamano);
+                    case BUSQUEDA -> dibujarLupa(g2, tamano);
                     default -> { }
                 }
                 g2.dispose();
@@ -142,6 +146,34 @@ public final class IconosUi {
         int x = (s - fm.stringWidth(texto)) / 2;
         int y = (s - fm.getHeight()) / 2 + fm.getAscent();
         g2.drawString(texto, x, y);
+    }
+
+    private static void dibujarUsuario(Graphics2D g2, int s) {
+        float w = s;
+        float h = s;
+        g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.drawOval((int) (w * 0.32), (int) (h * 0.12), (int) (w * 0.36), (int) (h * 0.36));
+        Path2D cuerpo = new Path2D.Float();
+        cuerpo.moveTo(w * 0.22, h * 0.88);
+        cuerpo.curveTo(w * 0.22, h * 0.58, w * 0.78, h * 0.58, w * 0.78, h * 0.88);
+        g2.draw(cuerpo);
+    }
+
+    private static void dibujarCandado(Graphics2D g2, int s) {
+        float w = s;
+        float h = s;
+        g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.draw(new RoundRectangle2D.Float(w * 0.28f, h * 0.48f, w * 0.44f, h * 0.38f, 4, 4));
+        g2.draw(new RoundRectangle2D.Float(w * 0.36f, h * 0.18f, w * 0.28f, h * 0.34f, 8, 8));
+        g2.drawLine((int) (w * 0.5), (int) (h * 0.62), (int) (w * 0.5), (int) (h * 0.72));
+    }
+
+    private static void dibujarLupa(Graphics2D g2, int s) {
+        float w = s;
+        float h = s;
+        g2.setStroke(new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.drawOval((int) (w * 0.18), (int) (h * 0.18), (int) (w * 0.48), (int) (h * 0.48));
+        g2.drawLine((int) (w * 0.58), (int) (h * 0.58), (int) (w * 0.82), (int) (h * 0.82));
     }
 
     private static void dibujarEngrane(Graphics2D g2, int s) {

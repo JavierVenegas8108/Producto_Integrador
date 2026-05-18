@@ -1,0 +1,26 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha: 18/05/2026
+Hora:  01:41:38
+Ticket #: 2
+Atendio: Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit    Importe
+----------------------------------------
+Leche Entera 1L           1    22.50      22.50
+Pan Blanco Bolsa         19    38.00     722.00
+Arroz 1kg                 2    28.90      57.80
+Papel Higienico 4 rol.    1    35.00      35.00
+Jabon de Barra            1    15.00      15.00
+Sabritas Original         1    19.00      19.00
+Manzana Roja kg           1    45.00      45.00
+Agua Natural 1.5L         1    12.00      12.00
+----------------------------------------
+                            TOTAL: $928.30
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

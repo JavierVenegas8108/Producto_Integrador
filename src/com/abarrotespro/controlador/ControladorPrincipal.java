@@ -12,6 +12,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import com.abarrotespro.modelo.SistemaPos;
+import com.abarrotespro.modelo.Venta;
+import com.abarrotespro.modelo.servicio.GeneradorTicket;
 import com.abarrotespro.vista.VistaLogin;
 import com.abarrotespro.vista.VistaPrincipal;
 import com.abarrotespro.vista.panel.PanelCorte;
@@ -145,14 +147,23 @@ public class ControladorPrincipal {
     }
 
     private void cobrarVenta() {
-        String error = modelo.cobrarVenta();
-        if (error != null) {
-            JOptionPane.showMessageDialog(vistaPrincipal, error, "Ticket vacio",
+        Venta ventaCerrada = modelo.cobrarVenta();
+        if (ventaCerrada == null) {
+            JOptionPane.showMessageDialog(vistaPrincipal, "El ticket esta vacio", "Ticket vacio",
                     JOptionPane.INFORMATION_MESSAGE);
         } else {
-            JOptionPane.showMessageDialog(vistaPrincipal,
-                    "Venta cobrada exitosamente", "Operacion exitosa",
-                    JOptionPane.INFORMATION_MESSAGE);
+            try {
+                var archivoTicket = GeneradorTicket.generar(ventaCerrada);
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Venta cobrada exitosamente.\nTicket guardado en:\n" + archivoTicket,
+                        "Operacion exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Venta cobrada, pero no se pudo generar el ticket:\n" + ex.getMessage(),
+                        "Aviso",
+                        JOptionPane.WARNING_MESSAGE);
+            }
             
             StringBuilder alertaBajoStock = new StringBuilder();
             
@@ -222,6 +233,7 @@ public class ControladorPrincipal {
         DialogosInventario.mostrarEditarProducto(vistaPrincipal, producto).ifPresent(datos -> {
             producto.setNombre(datos.nombre());
             producto.setPrecio(datos.precio());
+            modelo.registrarCambioInventario();
             refrescarInventario();
             refrescarCatalogo();
             JOptionPane.showMessageDialog(vistaPrincipal,

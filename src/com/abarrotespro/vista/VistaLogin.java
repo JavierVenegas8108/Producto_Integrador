@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.ComponentesUi;
+import com.abarrotespro.vista.util.IconosUi;
 
 /**
  * Pantalla de inicio de sesion del punto de venta.
@@ -64,9 +65,9 @@ public class VistaLogin extends JFrame {
         tarjeta.add(subtitulo);
         tarjeta.add(Box.createVerticalStrut(30));
 
-        tarjeta.add(crearCampoConEtiqueta("Usuario", "👤", true));
+        tarjeta.add(crearCampoConEtiqueta("Usuario", IconosUi.TipoIcono.USUARIO, true));
         tarjeta.add(Box.createVerticalStrut(16));
-        tarjeta.add(crearCampoConEtiqueta("Contrasena", "🔒", false));
+        tarjeta.add(crearCampoConEtiqueta("Contrasena", IconosUi.TipoIcono.CANDADO, false));
         tarjeta.add(Box.createVerticalStrut(8));
 
         etiquetaError = new JLabel(" ");
@@ -92,26 +93,29 @@ public class VistaLogin extends JFrame {
         return raiz;
     }
 
-    private JPanel crearCampoConEtiqueta(String etiqueta, String icono, boolean esUsuario) {
+    private JPanel crearCampoConEtiqueta(String etiqueta, IconosUi.TipoIcono tipoIcono, boolean esUsuario) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setOpaque(false);
         panel.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        JLabel lbl = new JLabel(icono + "  " + etiqueta);
+        Icon icono = IconosUi.crear(tipoIcono, 14, Colores.GRIS_TEXTO);
+        JLabel lbl = new JLabel(etiqueta, icono, SwingConstants.LEFT);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lbl.setForeground(Colores.GRIS_TEXTO);
+        lbl.setIconTextGap(6);
         lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(lbl);
         panel.add(Box.createVerticalStrut(6));
 
+        Icon iconoCampo = IconosUi.crear(tipoIcono, 16, Colores.GRIS_TEXTO);
         if (esUsuario) {
-            campoUsuario = ComponentesUi.crearCampoTexto("Ingresa tu usuario");
+            campoUsuario = ComponentesUi.crearCampoTextoConIcono(iconoCampo, "Ingresa tu usuario");
             campoUsuario.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
             panel.add(campoUsuario);
         } else {
-            campoContrasena = ComponentesUi.crearCampoContrasena();
+            campoContrasena = ComponentesUi.crearCampoContrasenaConIcono(iconoCampo);
             campoContrasena.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
             panel.add(campoContrasena);
         }

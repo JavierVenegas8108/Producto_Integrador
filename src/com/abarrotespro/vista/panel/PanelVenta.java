@@ -14,6 +14,7 @@ import com.abarrotespro.modelo.Producto;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.ComponentesUi;
+import com.abarrotespro.vista.util.IconosUi;
 
 /**
  * Modulo de venta: catalogo de productos y ticket activo.
@@ -44,19 +45,11 @@ public class PanelVenta extends JPanel {
         busqueda.setOpaque(false);
         busqueda.setBorder(new EmptyBorder(0, 0, 8, 0));
 
-        campoBusqueda = ComponentesUi.crearCampoTexto("Buscar producto...");
+        Icon iconoLupa = IconosUi.crear(IconosUi.TipoIcono.BUSQUEDA, 16, Colores.GRIS_TEXTO);
+        campoBusqueda = ComponentesUi.crearCampoTextoConIcono(iconoLupa, "Buscar producto...");
         campoBusqueda.setPreferredSize(new Dimension(300, 42));
 
-        JLabel iconoBusqueda = new JLabel("🔍");
-        iconoBusqueda.setFont(new Font("Segoe UI", Font.PLAIN, 18));
-        iconoBusqueda.setBorder(new EmptyBorder(0, 12, 0, 0));
-
-        JPanel campoWrapper = new JPanel(new BorderLayout());
-        campoWrapper.setOpaque(false);
-        campoWrapper.add(campoBusqueda, BorderLayout.CENTER);
-        campoWrapper.add(iconoBusqueda, BorderLayout.WEST);
-
-        busqueda.add(campoWrapper, BorderLayout.CENTER);
+        busqueda.add(campoBusqueda, BorderLayout.CENTER);
         panel.add(busqueda, BorderLayout.NORTH);
 
         contenedorProductos = new JPanel();

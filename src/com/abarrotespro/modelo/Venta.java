@@ -47,6 +47,10 @@ public class Venta {
         this.cerrada = cerrada;
     }
 
+    public void setFechaHora(LocalDateTime fechaHora) {
+        this.fechaHora = fechaHora;
+    }
+
     /** Agrega un producto al ticket o incrementa su cantidad. */
     public void agregarProducto(Producto producto, int cantidad) {
         for (LineaVenta linea : lineas) {

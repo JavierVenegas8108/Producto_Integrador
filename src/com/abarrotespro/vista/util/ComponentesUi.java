@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 /**
@@ -122,23 +123,76 @@ public final class ComponentesUi {
         return boton;
     }
 
+    private static final int PADDING_ICONO = 38;
+
     public static JTextField crearCampoTexto(String placeholder) {
         JTextField campo = new JTextField();
-        campo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        campo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Colores.GRIS_BORDE, 1, true),
-                new EmptyBorder(10, 12, 10, 12)));
-        campo.putClientProperty("JTextField.placeholderText", placeholder);
+        aplicarEstiloCampo(campo, placeholder, null);
+        return campo;
+    }
+
+    public static JTextField crearCampoTextoConIcono(Icon icono, String placeholder) {
+        JTextField campo = new JTextField();
+        aplicarEstiloCampo(campo, placeholder, icono);
         return campo;
     }
 
     public static JPasswordField crearCampoContrasena() {
         JPasswordField campo = new JPasswordField();
-        campo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        campo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Colores.GRIS_BORDE, 1, true),
-                new EmptyBorder(10, 12, 10, 12)));
+        aplicarEstiloCampo(campo, null, null);
         return campo;
+    }
+
+    public static JPasswordField crearCampoContrasenaConIcono(Icon icono) {
+        JPasswordField campo = new JPasswordField();
+        aplicarEstiloCampo(campo, null, icono);
+        return campo;
+    }
+
+    private static void aplicarEstiloCampo(JTextField campo, String placeholder, Icon icono) {
+        campo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        campo.setOpaque(false);
+        Border borde = icono != null
+                ? new BordeCampoConIcono(icono, Colores.GRIS_BORDE)
+                : BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Colores.GRIS_BORDE, 1, true),
+                        new EmptyBorder(10, 12, 10, 12));
+        campo.setBorder(borde);
+        if (placeholder != null && !placeholder.isEmpty()) {
+            campo.putClientProperty("JTextField.placeholderText", placeholder);
+        }
+    }
+
+    /** Borde redondeado con icono alineado a la izquierda dentro del campo. */
+    private static final class BordeCampoConIcono implements Border {
+        private final Icon icono;
+        private final Color colorBorde;
+
+        BordeCampoConIcono(Icon icono, Color colorBorde) {
+            this.icono = icono;
+            this.colorBorde = colorBorde;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(colorBorde);
+            g2.draw(new RoundRectangle2D.Float(x, y, width - 1f, height - 1f, 8, 8));
+            int iconY = y + (height - icono.getIconHeight()) / 2;
+            icono.paintIcon(c, g2, x + 10, iconY);
+            g2.dispose();
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(10, PADDING_ICONO, 10, 12);
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return false;
+        }
     }
 
     public static JLabel crearEtiquetaStock(int stock) {

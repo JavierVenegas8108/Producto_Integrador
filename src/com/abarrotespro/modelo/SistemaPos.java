@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.abarrotespro.modelo.dao.PosPersistencia;
+import com.abarrotespro.modelo.dto.EstadoPersistido;
+
 /**
  * Modelo central del punto de venta: inventario, ventas, caja y usuarios.
  */
@@ -14,6 +17,7 @@ public class SistemaPos {
     private final List<Producto> productos;
     private final List<Venta> ventasDelDia;
     private final List<Corte> historialCortes;
+    private final PosPersistencia persistencia;
 
     private Usuario usuarioActivo;
     private Venta ventaActual;
@@ -28,17 +32,53 @@ public class SistemaPos {
         productos = new ArrayList<>();
         ventasDelDia = new ArrayList<>();
         historialCortes = new ArrayList<>();
+        persistencia = new PosPersistencia();
         contadorVentas = 0;
         contadorProductos = 0;
         contadorCortes = 0;
         totalEnCaja = 1250.50;
         entradasManuales = 200.00;
-        inicializarDatos();
+        usuarios.add(new Usuario("admin", "admin123", "Administrador", "AD"));
+        if (persistencia.existenDatos()) {
+            try {
+                persistencia.cargar(this);
+            } catch (Exception e) {
+                System.err.println("No se pudieron cargar datos guardados: " + e.getMessage());
+                inicializarDatos();
+                persistir();
+            }
+        } else {
+            inicializarDatos();
+            persistir();
+        }
+    }
+
+    public void cargarEstado(EstadoPersistido estado) {
+        productos.clear();
+        ventasDelDia.clear();
+        historialCortes.clear();
+        productos.addAll(estado.getProductos());
+        ventasDelDia.addAll(estado.getVentas());
+        historialCortes.addAll(estado.getCortes());
+        totalEnCaja = estado.getTotalEnCaja();
+        entradasManuales = estado.getEntradasManuales();
+        contadorVentas = estado.getContadorVentas();
+        contadorProductos = estado.getContadorProductos();
+        contadorCortes = estado.getContadorCortes();
+    }
+
+    public EstadoPersistido exportarEstado() {
+        return new EstadoPersistido(
+                productos, ventasDelDia, historialCortes,
+                totalEnCaja, entradasManuales,
+                contadorVentas, contadorProductos, contadorCortes);
+    }
+
+    private void persistir() {
+        persistencia.guardar(this);
     }
 
     private void inicializarDatos() {
-        usuarios.add(new Usuario("admin", "admin123", "Administrador", "AD"));
-
         agregarProducto("Leche Entera 1L", 22.50, 45, "Lacteos", "🥛");
         agregarProducto("Pan Blanco Bolsa", 38.00, 20, "Panaderia", "🍞");
         agregarProducto("Arroz 1kg", 28.90, 60, "Abarrotes", "🍚");
@@ -140,6 +180,7 @@ public class SistemaPos {
         }
         ventaActual.agregarProducto(producto, 1);
         producto.reducirStock(1);
+        persistir();
         return null;
     }
 
@@ -150,20 +191,27 @@ public class SistemaPos {
         LineaVenta linea = ventaActual.getLineas().get(indice);
         linea.getProducto().aumentarStock(linea.getCantidad());
         ventaActual.eliminarLinea(indice);
+        persistir();
     }
 
-    /** Cierra el ticket y suma al total en caja. */
-    public String cobrarVenta() {
+    /**
+     * Cierra el ticket, actualiza caja e inventario persistido.
+     * @return la venta cerrada o null si el ticket esta vacio
+     */
+    public Venta cobrarVenta() {
         if (ventaActual == null || ventaActual.estaVacia()) {
-            return "El ticket esta vacio";
+            return null;
         }
         double total = ventaActual.getTotal();
+        ventaActual.setFechaHora(java.time.LocalDateTime.now());
         ventaActual.setCerrada(true);
-        ventasDelDia.add(ventaActual);
+        Venta ventaCerrada = ventaActual;
+        ventasDelDia.add(ventaCerrada);
         totalEnCaja += total;
         ventaActual = new Venta(++contadorVentas, usuarioActivo.getNombreCompleto());
+        persistir();
         System.out.println("Venta cobrada: $" + String.format("%.2f", total));
-        return null;
+        return ventaCerrada;
     }
 
     public Producto buscarProductoPorId(int id) {
@@ -174,19 +222,27 @@ public class SistemaPos {
         Producto p = buscarProductoPorId(id);
         if (p != null) {
             p.aumentarStock(cantidad);
+            persistir();
             System.out.println("Stock actualizado para producto #" + id);
         }
     }
 
     public void eliminarProducto(int id) {
         productos.removeIf(p -> p.getId() == id);
+        persistir();
     }
 
     public Producto crearProducto(String nombre, double precio, int stock, int stockMinimo) {
         contadorProductos++;
         Producto nuevo = new Producto(contadorProductos, nombre, precio, stock, "General", "📦");
+        nuevo.setStockMinimo(stockMinimo);
         productos.add(nuevo);
+        persistir();
         return nuevo;
+    }
+
+    public void registrarCambioInventario() {
+        persistir();
     }
 
     public double getVentasHoy() {
@@ -208,6 +264,7 @@ public class SistemaPos {
         totalEnCaja = 0;
         entradasManuales = 0;
         ventasDelDia.clear();
+        persistir();
         System.out.println("Corte de caja realizado: $" + String.format("%.2f", monto));
         return corte;
     }
@@ -216,6 +273,7 @@ public class SistemaPos {
         if (monto > 0) {
             entradasManuales += monto;
             totalEnCaja += monto;
+            persistir();
         }
     }
 }

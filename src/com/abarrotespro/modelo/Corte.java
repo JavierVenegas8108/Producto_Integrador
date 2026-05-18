@@ -16,8 +16,12 @@ public class Corte {
     private String usuarioNombre;
 
     public Corte(double monto, String usuarioNombre) {
+        this(monto, usuarioNombre, LocalDateTime.now());
+    }
+
+    public Corte(double monto, String usuarioNombre, LocalDateTime fechaHora) {
         this.monto = monto;
-        this.fechaHora = LocalDateTime.now();
+        this.fechaHora = fechaHora;
         this.usuarioNombre = usuarioNombre;
     }
 
