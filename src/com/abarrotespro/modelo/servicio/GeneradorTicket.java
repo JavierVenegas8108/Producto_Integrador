@@ -25,15 +25,7 @@ public final class GeneradorTicket {
     private GeneradorTicket() {
     }
 
-    public static Path generar(Venta venta) throws IOException {
-        Path directorio = Paths.get(System.getProperty("user.dir"), "tickets");
-        Files.createDirectories(directorio);
-
-        String nombreArchivo = String.format("ticket_%03d_%s.txt",
-                venta.getId(),
-                venta.getFechaHora().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
-        Path archivo = directorio.resolve(nombreArchivo);
-
+    public static String generarContenido(Venta venta) {
         StringBuilder sb = new StringBuilder();
         sb.append("========================================\n");
         sb.append("           ").append(NOMBRE_NEGOCIO.toUpperCase()).append("\n");
@@ -64,8 +56,19 @@ public final class GeneradorTicket {
         sb.append("   Gracias por su preferencia!\n");
         sb.append("        Vuelva pronto.\n");
         sb.append("========================================\n");
+        return sb.toString();
+    }
 
-        Files.writeString(archivo, sb.toString(), StandardCharsets.UTF_8);
+    public static Path generar(Venta venta) throws IOException {
+        Path directorio = Paths.get(System.getProperty("user.dir"), "tickets");
+        Files.createDirectories(directorio);
+
+        String nombreArchivo = String.format("ticket_%03d_%s.txt",
+                venta.getId(),
+                venta.getFechaHora().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")));
+        Path archivo = directorio.resolve(nombreArchivo);
+
+        Files.writeString(archivo, generarContenido(venta), StandardCharsets.UTF_8);
         return archivo;
     }
 
