@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public final class DialogosInventario {
 
-    public record DatosEdicion(String nombre, double precio) {
+    public record DatosEdicion(String nombre, double precio,int stockMinimo) {
     }
 
     private DialogosInventario() {
@@ -44,6 +44,14 @@ public final class DialogosInventario {
         contenido.add(Box.createVerticalStrut(6));
         contenido.add(campoPrecio);
         contenido.add(Box.createVerticalStrut(24));
+        
+        JLabel lblStockMinimo = crearEtiquetaCampo("Stock Minimo");
+        JTextField campoStockMinimo = ComponentesUi.crearCampoTexto("");
+        campoPrecio.setText(String.valueOf(producto.getStockMinimo()));
+        contenido.add(lblStockMinimo);
+        contenido.add(Box.createVerticalStrut(6));
+        contenido.add(campoStockMinimo);
+        contenido.add(Box.createVerticalStrut(24));
 
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         botones.setOpaque(false);
@@ -62,10 +70,11 @@ public final class DialogosInventario {
             try {
                 String nom = campoNombre.getText().trim();
                 double pre = Double.parseDouble(campoPrecio.getText().trim());
+                int stockMinimo = Integer.parseInt(campoStockMinimo.getText().trim());
                 if (nom.isEmpty() || pre < 0) {
                     throw new IllegalArgumentException();
                 }
-                resultado[0] = Optional.of(new DatosEdicion(nom, pre));
+                resultado[0] = Optional.of(new DatosEdicion(nom, pre,stockMinimo));
                 dialogo.dispose();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(dialogo,
