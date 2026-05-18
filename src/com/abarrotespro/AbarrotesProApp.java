@@ -10,5 +10,6 @@ public class AbarrotesProApp {
         System.out.println("Iniciando Abarrotes Pro V2.0...");
         ControladorPrincipal controlador = new ControladorPrincipal();
         controlador.iniciar();
+        // sigma
     }
 }
