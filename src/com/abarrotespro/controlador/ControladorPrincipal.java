@@ -20,6 +20,7 @@ import com.abarrotespro.vista.panel.PanelCorte;
 import com.abarrotespro.vista.panel.PanelInventario;
 import com.abarrotespro.vista.panel.PanelVenta;
 import com.abarrotespro.vista.util.DialogosInventario;
+import com.abarrotespro.vista.util.GestorImagenProducto;
 
 /**
  * Controlador principal: enlaza vistas con el modelo y coordina la logica de negocio.
@@ -29,6 +30,7 @@ public class ControladorPrincipal {
     private final SistemaPos modelo;
     private VistaLogin vistaLogin;
     private VistaPrincipal vistaPrincipal;
+    private ProveedorController controladorProveedores;
 
     public ControladorPrincipal() {
         this.modelo = new SistemaPos();
@@ -80,6 +82,7 @@ public class ControladorPrincipal {
         configurarNavegacion();
         configurarVenta();
         configurarInventario();
+        configurarProveedores();
         configurarCorte();
         configurarCerrarSesion();
 
@@ -108,11 +111,23 @@ public class ControladorPrincipal {
                     refrescarVenta();
                 } else if (VistaPrincipal.CARD_INVENTARIO.equals(card)) {
                     refrescarInventario();
+                } else if (VistaPrincipal.CARD_PROVEEDORES.equals(card)) {
+                    if (controladorProveedores != null) {
+                        controladorProveedores.refrescarTabla();
+                    }
                 } else if (VistaPrincipal.CARD_CORTE.equals(card)) {
                     refrescarCorte();
                 }
             });
         });
+    }
+
+    private void configurarProveedores() {
+        controladorProveedores = new ProveedorController(
+                modelo,
+                vistaPrincipal.getPanelProveedores(),
+                vistaPrincipal);
+        controladorProveedores.inicializar();
     }
 
     private void configurarVenta() {
@@ -231,47 +246,32 @@ public class ControladorPrincipal {
 
     private void mostrarDialogoEditarProducto(com.abarrotespro.modelo.Producto producto) {
         DialogosInventario.mostrarEditarProducto(vistaPrincipal, producto).ifPresent(datos -> {
-            producto.setNombre(datos.nombre());
-            producto.setPrecio(datos.precio());
-            producto.setStockMinimo(datos.stockMinimo());
-            modelo.registrarCambioInventario();
-            refrescarInventario();
-            refrescarCatalogo();
-            JOptionPane.showMessageDialog(vistaPrincipal,
-                    "Producto actualizado correctamente", "Operacion exitosa",
-                    JOptionPane.INFORMATION_MESSAGE);
+            try {
+                producto.setNombre(datos.nombre());
+                producto.setPrecio(datos.precio());
+                producto.setStockMinimo(datos.stockMinimo());
+                aplicarImagenProducto(producto, datos);
+                modelo.actualizarProducto(producto);
+                refrescarInventario();
+                refrescarCatalogo();
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Producto actualizado correctamente", "Operacion exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "No se pudo guardar la imagen del producto.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         });
     }
+
     private void mostrarDialogoNuevoProducto() {
-        JTextField nombre = new JTextField();
-        JTextField precio = new JTextField();
-        JTextField stock = new JTextField();
-        JTextField stockMinimo = new JTextField();
-
-        Object[] campos = {
-                "Nombre:", nombre,
-                "Precio:", precio,
-                "Stock inicial:", stock,
-                "Stock mínimo de alerta:", stockMinimo 
-        };
-
-        int opcion = JOptionPane.showConfirmDialog(vistaPrincipal, campos,
-                "Nuevo Producto", JOptionPane.OK_CANCEL_OPTION);
-        if (opcion == JOptionPane.OK_OPTION) {
+        DialogosInventario.mostrarNuevoProducto(vistaPrincipal).ifPresent(datos -> {
             try {
-                String nom = nombre.getText().trim();
-                double pre = Double.parseDouble(precio.getText().trim());
-                int stk = Integer.parseInt(stock.getText().trim());
-                int stkMin = Integer.parseInt(stockMinimo.getText().trim()); 
-
-                
-                if (nom.isEmpty() || pre < 0 || stk < 0 || stkMin < 0) {
-                    throw new IllegalArgumentException();
-                }
-                
-               
-                modelo.crearProducto(nom, pre, stk, stkMin); 
-                
+                com.abarrotespro.modelo.Producto nuevo = modelo.crearProducto(
+                        datos.nombre(), datos.precio(), datos.stockInicial(), datos.stockMinimo(), null);
+                aplicarImagenProducto(nuevo, datos);
+                modelo.actualizarProducto(nuevo);
                 refrescarInventario();
                 refrescarCatalogo();
                 JOptionPane.showMessageDialog(vistaPrincipal,
@@ -279,9 +279,19 @@ public class ControladorPrincipal {
                         JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(vistaPrincipal,
-                        "Datos invalidos. Asegúrese de ingresar números válidos.", "Error",
+                        "No se pudo guardar la imagen del producto.", "Error",
                         JOptionPane.ERROR_MESSAGE);
             }
+        });
+    }
+
+    private void aplicarImagenProducto(com.abarrotespro.modelo.Producto producto,
+            DialogosInventario.DatosFormularioProducto datos) throws Exception {
+        if (datos.archivoImagenNuevo() != null) {
+            String ruta = GestorImagenProducto.guardarImagen(datos.archivoImagenNuevo(), producto.getId());
+            producto.setRutaImagen(ruta);
+        } else if (datos.rutaImagen() != null && !datos.rutaImagen().isBlank()) {
+            producto.setRutaImagen(datos.rutaImagen());
         }
     }
 

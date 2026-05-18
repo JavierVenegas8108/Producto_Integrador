@@ -14,6 +14,7 @@ import java.util.Properties;
 import com.abarrotespro.modelo.Corte;
 import com.abarrotespro.modelo.LineaVenta;
 import com.abarrotespro.modelo.Producto;
+import com.abarrotespro.modelo.Proveedor;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
@@ -40,6 +41,7 @@ public class PosPersistencia {
         try {
             Files.createDirectories(directorioDatos);
             guardarProductos(sistema.getProductos());
+            guardarProveedores(sistema.getProveedores());
             guardarVentas(sistema.getVentasDelDia());
             guardarCortes(sistema.getHistorialCortes());
             guardarEstado(sistema.exportarEstado());
@@ -50,6 +52,7 @@ public class PosPersistencia {
 
     public void cargar(SistemaPos sistema) throws IOException {
         List<Producto> productos = cargarProductos();
+        List<Proveedor> proveedores = cargarProveedores();
         List<Venta> ventas = cargarVentas(productos);
         List<Corte> cortes = cargarCortes();
         Properties props = new Properties();
@@ -64,9 +67,11 @@ public class PosPersistencia {
         int contVentas = Integer.parseInt(props.getProperty("contadorVentas", "0"));
         int contProd = Integer.parseInt(props.getProperty("contadorProductos", "0"));
         int contCortes = Integer.parseInt(props.getProperty("contadorCortes", "0"));
+        int contProv = Integer.parseInt(props.getProperty("contadorProveedores", "0"));
 
         EstadoPersistido estado = new EstadoPersistido(
-                productos, ventas, cortes, totalCaja, entradas, contVentas, contProd, contCortes);
+                productos, ventas, cortes, proveedores, totalCaja, entradas,
+                contVentas, contProd, contCortes, contProv);
         sistema.cargarEstado(estado);
     }
 
@@ -77,6 +82,7 @@ public class PosPersistencia {
         props.setProperty("contadorVentas", String.valueOf(estado.getContadorVentas()));
         props.setProperty("contadorProductos", String.valueOf(estado.getContadorProductos()));
         props.setProperty("contadorCortes", String.valueOf(estado.getContadorCortes()));
+        props.setProperty("contadorProveedores", String.valueOf(estado.getContadorProveedores()));
         Path archivo = directorioDatos.resolve("estado.properties");
         try (var out = Files.newOutputStream(archivo)) {
             props.store(out, "Estado del punto de venta Abarrotes Pro");
@@ -93,7 +99,8 @@ public class PosPersistencia {
                     String.valueOf(p.getStock()),
                     escapar(p.getCategoria()),
                     escapar(p.getEmoji()),
-                    String.valueOf(p.getStockMinimo())));
+                    String.valueOf(p.getStockMinimo()),
+                    escapar(p.getRutaImagen() != null ? p.getRutaImagen() : "")));
         }
         Files.write(directorioDatos.resolve("productos.tsv"), lineas, StandardCharsets.UTF_8);
     }
@@ -120,7 +127,53 @@ public class PosPersistencia {
                     desescapar(p[4]),
                     desescapar(p[5]));
             producto.setStockMinimo(Integer.parseInt(p[6]));
+            if (p.length >= 8) {
+                producto.setRutaImagen(desescapar(p[7]));
+            }
             lista.add(producto);
+        }
+        return lista;
+    }
+
+    private void guardarProveedores(List<Proveedor> proveedores) throws IOException {
+        List<String> lineas = new ArrayList<>();
+        for (Proveedor pr : proveedores) {
+            lineas.add(String.join(SEP,
+                    String.valueOf(pr.getId()),
+                    escapar(pr.getRazonSocial()),
+                    escapar(pr.getNombreContacto()),
+                    escapar(pr.getTelefono()),
+                    escapar(pr.getCorreo()),
+                    escapar(pr.getDireccion()),
+                    escapar(pr.getDiasVisita()),
+                    String.valueOf(pr.isActivo())));
+        }
+        Files.write(directorioDatos.resolve("proveedores.tsv"), lineas, StandardCharsets.UTF_8);
+    }
+
+    private List<Proveedor> cargarProveedores() throws IOException {
+        Path archivo = directorioDatos.resolve("proveedores.tsv");
+        if (!Files.exists(archivo)) {
+            return new ArrayList<>();
+        }
+        List<Proveedor> lista = new ArrayList<>();
+        for (String linea : Files.readAllLines(archivo, StandardCharsets.UTF_8)) {
+            if (linea.isBlank()) {
+                continue;
+            }
+            String[] p = linea.split(SEP, -1);
+            if (p.length < 8) {
+                continue;
+            }
+            lista.add(new Proveedor(
+                    Integer.parseInt(p[0]),
+                    desescapar(p[1]),
+                    desescapar(p[2]),
+                    desescapar(p[3]),
+                    desescapar(p[4]),
+                    desescapar(p[5]),
+                    desescapar(p[6]),
+                    Boolean.parseBoolean(p[7])));
         }
         return lista;
     }

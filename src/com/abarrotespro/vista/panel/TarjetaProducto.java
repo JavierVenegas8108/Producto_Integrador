@@ -10,6 +10,7 @@ import javax.swing.border.EmptyBorder;
 import com.abarrotespro.modelo.Producto;
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.ComponentesUi;
+import com.abarrotespro.vista.util.GestorImagenProducto;
 
 /**
  * Tarjeta visual de un producto en el modulo de venta.
@@ -37,8 +38,15 @@ public class TarjetaProducto extends JPanel {
         tarjeta.setOpaque(false);
         tarjeta.setBorder(new EmptyBorder(14, 14, 14, 14));
 
-        JLabel emoji = new JLabel(producto.getEmoji(), SwingConstants.CENTER);
-        emoji.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
+        JLabel emoji = new JLabel("", SwingConstants.CENTER);
+        ImageIcon iconoProducto = GestorImagenProducto.cargarMiniaturaOEmoji(
+                producto.getRutaImagen(), producto.getEmoji(), 64, 64);
+        if (iconoProducto != null) {
+            emoji.setIcon(iconoProducto);
+        } else {
+            emoji.setText(producto.getEmoji());
+            emoji.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 36));
+        }
 
         JPanel info = new JPanel();
         info.setOpaque(false);

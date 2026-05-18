@@ -12,11 +12,14 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumnModel;
 
 import com.abarrotespro.modelo.Producto;
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.ComponentesUi;
 import com.abarrotespro.vista.util.DialogosInventario;
+import com.abarrotespro.vista.util.FormatoIdUtil;
+import com.abarrotespro.vista.util.GestorImagenProducto;
 import com.abarrotespro.vista.util.IconosUi;
 
 /**
@@ -24,7 +27,13 @@ import com.abarrotespro.vista.util.IconosUi;
  */
 public class PanelInventario extends JPanel {
 
-    private static final int COL_ACCIONES = 5;
+    public static final int COL_ID = 0;
+    public static final int COL_IMAGEN = 1;
+    public static final int COL_NOMBRE = 2;
+    public static final int COL_PRECIO = 3;
+    public static final int COL_STOCK = 4;
+    public static final int COL_MINIMO = 5;
+    public static final int COL_ACCIONES = 6;
 
     private DefaultTableModel modeloTabla;
     private JTable tabla;
@@ -73,20 +82,35 @@ public class PanelInventario extends JPanel {
     }
 
     private JScrollPane crearTabla() {
-        String[] columnas = {"ITEM", "NOMBRE", "PRECIO", "STOCK ACTUAL", "ST. MINIMO", "ACCIONES"};
+        String[] columnas = {"id", "IMAGEN", "NOMBRE", "PRECIO", "STOCK ACTUAL", "ST. MINIMO", "ACCIONES"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
+
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == COL_ID) {
+                    return Integer.class;
+                }
+                if (columnIndex == COL_IMAGEN) {
+                    return ImageIcon.class;
+                }
+                if (columnIndex == COL_STOCK || columnIndex == COL_MINIMO) {
+                    return Integer.class;
+                }
+                return Object.class;
+            }
         };
 
         tabla = new JTable(modeloTabla);
-        tabla.setRowHeight(52);
+        tabla.setRowHeight(58);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setShowGrid(false);
         tabla.setIntercellSpacing(new Dimension(0, 0));
         tabla.setSelectionBackground(Colores.SIDEBAR_ACTIVO);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         JTableHeader header = tabla.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -95,17 +119,21 @@ public class PanelInventario extends JPanel {
         header.setPreferredSize(new Dimension(header.getWidth(), 42));
         header.setReorderingAllowed(false);
 
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(60);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(140);
-        tabla.getColumnModel().getColumn(2).setPreferredWidth(80);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(100);
-        tabla.getColumnModel().getColumn(4).setPreferredWidth(100);
-        tabla.getColumnModel().getColumn(COL_ACCIONES).setPreferredWidth(200);
+        TableColumnModel columnasTabla = tabla.getColumnModel();
+        columnasTabla.getColumn(COL_ID).setPreferredWidth(72);
+        columnasTabla.getColumn(COL_IMAGEN).setPreferredWidth(72);
+        columnasTabla.getColumn(COL_NOMBRE).setPreferredWidth(200);
+        columnasTabla.getColumn(COL_PRECIO).setPreferredWidth(95);
+        columnasTabla.getColumn(COL_STOCK).setPreferredWidth(110);
+        columnasTabla.getColumn(COL_MINIMO).setPreferredWidth(95);
+        columnasTabla.getColumn(COL_ACCIONES).setPreferredWidth(195);
 
-        tabla.getColumnModel().getColumn(2).setCellRenderer(new CeldaPrecioRenderer());
-        tabla.getColumnModel().getColumn(3).setCellRenderer(new CeldaStockRenderer());
-        tabla.getColumnModel().getColumn(4).setCellRenderer(new CeldaStockMinimoRenderer());
-        tabla.getColumnModel().getColumn(COL_ACCIONES).setCellRenderer(new CeldaAccionesRenderer());
+        columnasTabla.getColumn(COL_ID).setCellRenderer(new CeldaIdRenderer());
+        columnasTabla.getColumn(COL_IMAGEN).setCellRenderer(new CeldaImagenRenderer());
+        columnasTabla.getColumn(COL_PRECIO).setCellRenderer(new CeldaPrecioRenderer());
+        columnasTabla.getColumn(COL_STOCK).setCellRenderer(new CeldaStockRenderer());
+        columnasTabla.getColumn(COL_MINIMO).setCellRenderer(new CeldaStockMinimoRenderer());
+        columnasTabla.getColumn(COL_ACCIONES).setCellRenderer(new CeldaAccionesRenderer());
 
         tabla.addMouseListener(new MouseAdapter() {
             @Override
@@ -127,7 +155,7 @@ public class PanelInventario extends JPanel {
                         case 2 -> confirmarEliminacion(producto);
                         default -> { }
                     }
-                } else if (e.getClickCount() == 2) {
+                } else if (e.getClickCount() == 2 && columna != COL_IMAGEN) {
                     solicitarEdicion(producto);
                 }
             }
@@ -139,7 +167,6 @@ public class PanelInventario extends JPanel {
         return scroll;
     }
 
-    /** 0 = editar, 1 = surtir, 2 = eliminar */
     private int detectarAccionClic(MouseEvent e, int fila, int columna) {
         Rectangle celda = tabla.getCellRect(fila, columna, true);
         int relX = e.getX() - celda.x;
@@ -193,13 +220,45 @@ public class PanelInventario extends JPanel {
         modeloTabla.setRowCount(0);
         for (Producto p : productos) {
             modeloTabla.addRow(new Object[]{
-                    "#" + p.getId(),
+                    p.getId(),
+                    GestorImagenProducto.cargarMiniaturaOEmoji(
+                            p.getRutaImagen(), p.getEmoji(), 44, 44),
                     p.getNombre(),
                     ComponentesUi.formatearMoneda(p.getPrecio()),
                     p.getStock(),
                     p.getStockMinimo(),
                     ""
             });
+        }
+    }
+
+    private static class CeldaIdRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+            if (value instanceof Integer id) {
+                lbl.setText(FormatoIdUtil.formatearIdVisual(id));
+            }
+            lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lbl.setForeground(Colores.GRIS_TEXTO);
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            return lbl;
+        }
+    }
+
+    private static class CeldaImagenRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+            lbl.setIcon(value instanceof ImageIcon icono ? icono : null);
+            lbl.setText("");
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            lbl.setVerticalAlignment(SwingConstants.CENTER);
+            return lbl;
         }
     }
 
@@ -221,23 +280,20 @@ public class PanelInventario extends JPanel {
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
 
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8));
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
             panel.setOpaque(true);
             panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
 
             if (productosActuales != null && row < productosActuales.size()) {
                 Producto p = productosActuales.get(row);
-
                 if (p.getStock() <= p.getStockMinimo()) {
                     JLabel lblAlerta = ComponentesUi.crearEtiquetaStock((Integer) value);
                     lblAlerta.setForeground(Color.RED);
-                    lblAlerta.setFont(new Font("Segoe UI", Font.BOLD, 13));
                     panel.setBackground(new Color(255, 230, 230));
                     panel.add(lblAlerta);
                     return panel;
                 }
             }
-
             panel.add(ComponentesUi.crearEtiquetaStock((Integer) value));
             return panel;
         }
@@ -247,11 +303,11 @@ public class PanelInventario extends JPanel {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 8));
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 10));
             panel.setOpaque(true);
             panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
 
-            JButton editar = crearBotonIconoTabla(IconosUi.TipoIcono.LAPIZ, Colores.AZUL_PRIMARIO, "Editar");
+            JButton editar = crearBotonIconoTabla(IconosUi.TipoIcono.LAPIZ, Colores.AZUL_PRIMARIO);
             JButton surtir = new JButton("+ Surtir");
             surtir.setFont(new Font("Segoe UI", Font.BOLD, 11));
             surtir.setForeground(Colores.AZUL_PRIMARIO);
@@ -259,9 +315,7 @@ public class PanelInventario extends JPanel {
             surtir.setContentAreaFilled(false);
             surtir.setFocusPainted(false);
             surtir.setPreferredSize(new Dimension(72, 28));
-            surtir.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-            JButton eliminar = crearBotonIconoTabla(IconosUi.TipoIcono.BASURA, Colores.ROJO, "Eliminar");
+            JButton eliminar = crearBotonIconoTabla(IconosUi.TipoIcono.BASURA, Colores.ROJO);
 
             panel.add(editar);
             panel.add(surtir);
@@ -269,9 +323,8 @@ public class PanelInventario extends JPanel {
             return panel;
         }
 
-        private static JButton crearBotonIconoTabla(IconosUi.TipoIcono tipo, Color color, String tooltip) {
+        private static JButton crearBotonIconoTabla(IconosUi.TipoIcono tipo, Color color) {
             JButton boton = new JButton(IconosUi.crear(tipo, 16, color));
-            boton.setToolTipText(tooltip);
             boton.setPreferredSize(new Dimension(32, 28));
             boton.setFocusPainted(false);
             boton.setBorderPainted(false);
@@ -288,7 +341,6 @@ public class PanelInventario extends JPanel {
             JLabel lbl = (JLabel) super.getTableCellRendererComponent(
                     table, value, isSelected, hasFocus, row, column);
             lbl.setForeground(Colores.GRIS_TEXTO);
-            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             return lbl;
         }
