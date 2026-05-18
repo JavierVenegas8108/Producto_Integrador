@@ -11,6 +11,7 @@ import com.abarrotespro.vista.panel.PanelCorte;
 import com.abarrotespro.vista.panel.PanelEnDesarrollo;
 import com.abarrotespro.vista.panel.PanelInventario;
 import com.abarrotespro.vista.panel.PanelVenta;
+import com.abarrotespro.vista.panel.ProveedoresPanel;
 import com.abarrotespro.vista.util.Colores;
 import com.abarrotespro.vista.util.IconosUi;
 
@@ -36,6 +37,7 @@ public class VistaPrincipal extends JFrame {
 
     private PanelVenta panelVenta;
     private PanelInventario panelInventario;
+    private ProveedoresPanel panelProveedores;
     private PanelCorte panelCorte;
     private JButton botonCerrarSesion;
 
@@ -63,12 +65,13 @@ public class VistaPrincipal extends JFrame {
     private void construirModulos() {
         panelVenta = new PanelVenta();
         panelInventario = new PanelInventario();
+        panelProveedores = new ProveedoresPanel();
         panelCorte = new PanelCorte();
 
         panelContenido.add(panelVenta, CARD_VENTA);
         panelContenido.add(panelInventario, CARD_INVENTARIO);
         panelContenido.add(new PanelEnDesarrollo("Tickets"), CARD_TICKETS);
-        panelContenido.add(new PanelEnDesarrollo("Proveedores"), CARD_PROVEEDORES);
+        panelContenido.add(panelProveedores, CARD_PROVEEDORES);
         panelContenido.add(panelCorte, CARD_CORTE);
         panelContenido.add(new PanelEnDesarrollo("Configuracion"), CARD_CONFIG);
     }
@@ -265,5 +268,9 @@ public class VistaPrincipal extends JFrame {
 
     public PanelCorte getPanelCorte() {
         return panelCorte;
+    }
+
+    public ProveedoresPanel getPanelProveedores() {
+        return panelProveedores;
     }
 }
