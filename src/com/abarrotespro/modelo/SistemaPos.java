@@ -1,5 +1,6 @@
 package com.abarrotespro.modelo;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +8,8 @@ import java.util.stream.Collectors;
 
 import com.abarrotespro.modelo.dao.PosPersistencia;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
+import com.abarrotespro.modelo.dto.FilaReporteVenta;
+import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
 
 /**
  * Modelo central del punto de venta: inventario, ventas, caja y usuarios.
@@ -371,5 +374,9 @@ public class SistemaPos {
             totalEnCaja += monto;
             persistir();
         }
+    }
+
+    public List<FilaReporteVenta> consultarReporteVentas(LocalDate desde, LocalDate hasta) {
+        return ReporteVentasServicio.consultar(desde, hasta, ventasDelDia);
     }
 }

@@ -1,0 +1,26 @@
+Fecha de venta,Hora de venta,Número de ticket,Producto,Cantidad,Precio Unitario,Importe de línea,Total del Ticket,Usuario que atendió
+18/05/2026,01:41:09,1,Leche Entera 1L,1,22.50,22.50,60.50,Administrador
+18/05/2026,01:41:09,1,Pan Blanco Bolsa,1,38.00,38.00,60.50,Administrador
+18/05/2026,08:58:52,4,Leche Entera 1L,3,22.50,67.50,254.00,Administrador
+18/05/2026,08:58:52,4,Arroz 1kg                 5    28.90     144.,5,28.90,144.50,254.00,Administrador
+18/05/2026,08:58:52,4,Aceite Vegetal 1L,1,42.00,42.00,254.00,Administrador
+18/05/2026,10:38:10,7,Pan Blanco Bolsa,2,38.00,76.00,267.40,Administrador
+18/05/2026,10:38:10,7,Papel Higienico 4 rol.    4    35.00     1,4,35.00,140.00,267.40,Administrador
+18/05/2026,10:38:10,7,Leche Entera 1L,1,22.50,22.50,267.40,Administrador
+18/05/2026,10:38:10,7,Arroz 1kg,1,28.90,28.90,267.40,Administrador
+18/05/2026,16:44:37,2,Aceite Vegetal 1L,1,42.00,42.00,297.40,Administrador
+18/05/2026,16:44:37,2,Jabon de Barra,1,15.00,15.00,297.40,Administrador
+18/05/2026,16:44:37,2,Arroz 1kg,1,28.90,28.90,297.40,Administrador
+18/05/2026,16:44:37,2,Papel Higienico 4 rollos,1,35.00,35.00,297.40,Administrador
+18/05/2026,16:44:37,2,Huevo Carton 12pz,1,52.00,52.00,297.40,Administrador
+18/05/2026,16:44:37,2,Pan Blanco Bolsa,1,38.00,38.00,297.40,Administrador
+18/05/2026,16:44:37,2,Leche Entera 1L,1,22.50,22.50,297.40,Administrador
+18/05/2026,16:44:37,2,Sabritas Original,1,19.00,19.00,297.40,Administrador
+18/05/2026,16:44:37,2,Manzana Roja kg,1,45.00,45.00,297.40,Administrador
+18/05/2026,16:44:50,3,Leche Entera 1L,1,22.50,22.50,169.40,Administrador
+18/05/2026,16:44:50,3,Arroz 1kg,1,28.90,28.90,169.40,Administrador
+18/05/2026,16:44:50,3,Aceite Vegetal 1L,1,42.00,42.00,169.40,Administrador
+18/05/2026,16:44:50,3,Sabritas Original,1,19.00,19.00,169.40,Administrador
+18/05/2026,16:44:50,3,Manzana Roja kg,1,45.00,45.00,169.40,Administrador
+18/05/2026,16:44:50,3,Agua Natural 1.5L,1,12.00,12.00,169.40,Administrador
+18/05/2026,17:10:18,6,Jabon de Barra,1,15.00,15.00,15.00,Administrador

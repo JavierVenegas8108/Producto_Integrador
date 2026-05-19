@@ -3,6 +3,11 @@ package com.abarrotespro.controlador;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.JButton;
@@ -13,8 +18,13 @@ import javax.swing.UIManager;
 
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
+import com.abarrotespro.modelo.dto.FilaReporteVenta;
+import com.abarrotespro.modelo.servicio.ExportadorVentas;
 import com.abarrotespro.modelo.servicio.GeneradorTicket;
 import com.abarrotespro.modelo.servicio.LectorTickets;
+import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
+import com.abarrotespro.vista.dialog.ReporteVentasDialog;
+import com.abarrotespro.vista.dialog.VistaPreviaTicketDialog;
 import com.abarrotespro.vista.panel.PanelConfiguracion;
 import com.abarrotespro.vista.panel.PanelTickets;
 import com.abarrotespro.vista.util.TemaUi;
@@ -174,17 +184,20 @@ public class ControladorPrincipal {
             JOptionPane.showMessageDialog(vistaPrincipal, "El ticket esta vacio", "Ticket vacio",
                     JOptionPane.INFORMATION_MESSAGE);
         } else {
+            String contenidoTicket = GeneradorTicket.generarContenido(ventaCerrada);
             try {
                 var archivoTicket = GeneradorTicket.generar(ventaCerrada);
                 JOptionPane.showMessageDialog(vistaPrincipal,
                         "Venta cobrada exitosamente.\nTicket guardado en:\n" + archivoTicket,
                         "Operacion exitosa",
                         JOptionPane.INFORMATION_MESSAGE);
+                VistaPreviaTicketDialog.mostrar(vistaPrincipal, contenidoTicket);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(vistaPrincipal,
                         "Venta cobrada, pero no se pudo generar el ticket:\n" + ex.getMessage(),
                         "Aviso",
                         JOptionPane.WARNING_MESSAGE);
+                VistaPreviaTicketDialog.mostrar(vistaPrincipal, contenidoTicket);
             }
             
             StringBuilder alertaBajoStock = new StringBuilder();
@@ -321,6 +334,85 @@ public class ControladorPrincipal {
     private void configurarCorte() {
         PanelCorte panel = vistaPrincipal.getPanelCorte();
         panel.getBotonCerrarDia().addActionListener(e -> procesarCierreDia());
+        panel.getBotonVerReporte().addActionListener(e -> mostrarReporteVentas());
+        panel.getBotonExportarCsv().addActionListener(e -> exportarReporteVentasCsv());
+    }
+
+    private void mostrarReporteVentas() {
+        try {
+            LocalDate[] rango = resolverRangoFechasReporte();
+            List<FilaReporteVenta> filas = modelo.consultarReporteVentas(rango[0], rango[1]);
+            if (filas.isEmpty()) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "No hay ventas registradas en el periodo seleccionado.",
+                        "Sin resultados",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            ReporteVentasDialog.mostrar(vistaPrincipal, filas);
+        } catch (DateTimeParseException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "Formato de fecha invalido. Use dd/MM/yyyy",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void exportarReporteVentasCsv() {
+        try {
+            LocalDate[] rango = resolverRangoFechasReporte();
+            List<FilaReporteVenta> filas = modelo.consultarReporteVentas(rango[0], rango[1]);
+            if (filas.isEmpty()) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "No hay ventas para exportar en el periodo seleccionado.",
+                        "Sin resultados",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            Path archivo = ExportadorVentas.exportarCsv(filas);
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "Reporte exportado correctamente:\n" + archivo,
+                    "Exportacion exitosa",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (DateTimeParseException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "Formato de fecha invalido. Use dd/MM/yyyy",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "No se pudo exportar el reporte:\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private LocalDate[] resolverRangoFechasReporte() {
+        PanelCorte panel = vistaPrincipal.getPanelCorte();
+        String filtro = (String) panel.getComboFiltroFecha().getSelectedItem();
+        LocalDate hoy = LocalDate.now();
+        if (PanelCorte.FILTRO_HOY.equals(filtro)) {
+            return new LocalDate[] { hoy, hoy };
+        }
+        if (PanelCorte.FILTRO_ULTIMOS_7.equals(filtro)) {
+            return new LocalDate[] { hoy.minusDays(6), hoy };
+        }
+        LocalDate desde = ReporteVentasServicio.parsearFechaCampo(panel.getCampoFechaDesde().getText());
+        LocalDate hasta = ReporteVentasServicio.parsearFechaCampo(panel.getCampoFechaHasta().getText());
+        if (!ReporteVentasServicio.esRangoValido(desde, hasta)) {
+            throw new IllegalArgumentException("La fecha inicial no puede ser posterior a la fecha final.");
+        }
+        return new LocalDate[] { desde, hasta };
     }
 
     private void procesarCierreDia() {
