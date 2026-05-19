@@ -38,6 +38,8 @@ public class PanelInventario extends JPanel {
     private DefaultTableModel modeloTabla;
     private JTable tabla;
     private JButton botonNuevo;
+    private JButton botonRegistroMercancia;
+    private JButton botonReporteBajoStock;
     private List<Producto> productosActuales;
     private BiConsumer<Integer, Integer> callbackSurtir;
     private Consumer<Integer> callbackEliminar;
@@ -74,10 +76,22 @@ public class PanelInventario extends JPanel {
         textos.add(desc);
 
         botonNuevo = ComponentesUi.crearBotonPrimario("+ Nuevo Producto", 40);
-        botonNuevo.setPreferredSize(new Dimension(180, 40));
+        botonNuevo.setPreferredSize(new Dimension(170, 40));
+
+        botonRegistroMercancia = ComponentesUi.crearBotonSecundario("Registro Mercancia", 40);
+        botonRegistroMercancia.setPreferredSize(new Dimension(170, 40));
+
+        botonReporteBajoStock = ComponentesUi.crearBotonSecundario("Bajo Stock", 40);
+        botonReporteBajoStock.setPreferredSize(new Dimension(120, 40));
+
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        acciones.setOpaque(false);
+        acciones.add(botonReporteBajoStock);
+        acciones.add(botonRegistroMercancia);
+        acciones.add(botonNuevo);
 
         panel.add(textos, BorderLayout.WEST);
-        panel.add(botonNuevo, BorderLayout.EAST);
+        panel.add(acciones, BorderLayout.EAST);
         return panel;
     }
 
@@ -198,6 +212,14 @@ public class PanelInventario extends JPanel {
 
     public JButton getBotonNuevo() {
         return botonNuevo;
+    }
+
+    public JButton getBotonRegistroMercancia() {
+        return botonRegistroMercancia;
+    }
+
+    public JButton getBotonReporteBajoStock() {
+        return botonReporteBajoStock;
     }
 
     public void alEditarProducto(Consumer<Producto> alEditar) {

@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.abarrotespro.modelo.dao.PosPersistencia;
+import com.abarrotespro.modelo.EntradaMercancia;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
 import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
@@ -264,12 +265,46 @@ public class SistemaPos {
     }
 
     public void surtirProducto(int id, int cantidad) {
-        Producto p = buscarProductoPorId(id);
-        if (p != null) {
+        registrarEntradaMercancia(id, cantidad);
+    }
+
+    /** Registra entrada de mercancia para un producto. */
+    public void registrarEntradaMercancia(int idProducto, int cantidad) {
+        Producto p = buscarProductoPorId(idProducto);
+        if (p != null && cantidad > 0) {
             p.aumentarStock(cantidad);
             persistir();
-            System.out.println("Stock actualizado para producto #" + id);
+            System.out.println("Entrada de mercancia: +" + cantidad + " para producto #" + idProducto);
         }
+    }
+
+    /**
+     * Registra multiples entradas de mercancia.
+     * @return numero de productos actualizados
+     */
+    public int registrarEntradaMercanciaMasiva(List<EntradaMercancia> entradas) {
+        if (entradas == null || entradas.isEmpty()) {
+            return 0;
+        }
+        int actualizados = 0;
+        for (EntradaMercancia entrada : entradas) {
+            Producto p = buscarProductoPorId(entrada.productoId());
+            if (p != null && entrada.cantidad() > 0) {
+                p.aumentarStock(entrada.cantidad());
+                actualizados++;
+            }
+        }
+        if (actualizados > 0) {
+            persistir();
+        }
+        return actualizados;
+    }
+
+    /** Productos cuya existencia es menor o igual al stock minimo configurado. */
+    public List<Producto> obtenerProductosBajoStock() {
+        return productos.stream()
+                .filter(p -> p.getStock() <= p.getStockMinimo())
+                .collect(Collectors.toList());
     }
 
     public void eliminarProducto(int id) {

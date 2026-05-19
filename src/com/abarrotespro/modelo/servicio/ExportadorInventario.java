@@ -41,6 +41,25 @@ public final class ExportadorInventario {
         return archivo;
     }
 
+    public static Path exportarBajoStockCsv(List<Producto> productos) throws IOException {
+        Path archivo = Paths.get(System.getProperty("user.dir"), "data",
+                "bajo_stock_" + LocalDateTime.now().format(FORMATO_FECHA) + ".csv");
+        Files.createDirectories(archivo.getParent());
+        StringBuilder sb = new StringBuilder();
+        sb.append("id,nombre,stock_actual,stock_minimo,diferencia,categoria\n");
+        for (Producto p : productos) {
+            int diferencia = p.getStockMinimo() - p.getStock();
+            sb.append(p.getId()).append(',');
+            sb.append(escaparCsv(p.getNombre())).append(',');
+            sb.append(p.getStock()).append(',');
+            sb.append(p.getStockMinimo()).append(',');
+            sb.append(diferencia).append(',');
+            sb.append(escaparCsv(p.getCategoria())).append('\n');
+        }
+        Files.writeString(archivo, sb.toString(), StandardCharsets.UTF_8);
+        return archivo;
+    }
+
     public static Path exportarTxt(List<Producto> productos) throws IOException {
         Path archivo = Paths.get(System.getProperty("user.dir"), "data",
                 "inventario_" + LocalDateTime.now().format(FORMATO_FECHA) + ".txt");

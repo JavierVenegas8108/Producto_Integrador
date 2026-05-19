@@ -19,10 +19,13 @@ import javax.swing.UIManager;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
+import com.abarrotespro.modelo.EntradaMercancia;
+import com.abarrotespro.modelo.servicio.ExportadorInventario;
 import com.abarrotespro.modelo.servicio.ExportadorVentas;
 import com.abarrotespro.modelo.servicio.GeneradorTicket;
 import com.abarrotespro.modelo.servicio.LectorTickets;
 import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
+import com.abarrotespro.vista.dialog.ReporteBajoStockDialog;
 import com.abarrotespro.vista.dialog.ReporteVentasDialog;
 import com.abarrotespro.vista.dialog.VistaPreviaTicketDialog;
 import com.abarrotespro.vista.panel.PanelConfiguracion;
@@ -201,13 +204,10 @@ public class ControladorPrincipal {
             }
             
             StringBuilder alertaBajoStock = new StringBuilder();
-            
-            for (com.abarrotespro.modelo.Producto p : modelo.getProductos()) {
-                if (p.getStock() <= p.getStockMinimo()) {
-                    alertaBajoStock.append("• ").append(p.getNombre())
-                                   .append(" (Stock actual: ").append(p.getStock())
-                                   .append(" | Mínimo: ").append(p.getStockMinimo()).append(")\n");
-                }
+            for (com.abarrotespro.modelo.Producto p : modelo.obtenerProductosBajoStock()) {
+                alertaBajoStock.append("• ").append(p.getNombre())
+                        .append(" (Stock actual: ").append(p.getStock())
+                        .append(" | Minimo: ").append(p.getStockMinimo()).append(")\n");
             }
             
             
@@ -249,6 +249,8 @@ public class ControladorPrincipal {
         PanelInventario panel = vistaPrincipal.getPanelInventario();
 
         panel.getBotonNuevo().addActionListener(e -> mostrarDialogoNuevoProducto());
+        panel.getBotonRegistroMercancia().addActionListener(e -> mostrarRegistroMercancia());
+        panel.getBotonReporteBajoStock().addActionListener(e -> mostrarReporteBajoStock());
 
         panel.actualizarTabla(
                 modelo.getProductos(),
@@ -313,6 +315,61 @@ public class ControladorPrincipal {
             producto.setRutaImagen(ruta);
         } else if (datos.rutaImagen() != null && !datos.rutaImagen().isBlank()) {
             producto.setRutaImagen(datos.rutaImagen());
+        }
+    }
+
+    private void mostrarRegistroMercancia() {
+        DialogosInventario.mostrarRegistroMercancia(vistaPrincipal, modelo.getProductos())
+                .ifPresent(entradas -> {
+                    int actualizados = modelo.registrarEntradaMercanciaMasiva(entradas);
+                    if (actualizados > 0) {
+                        refrescarInventario();
+                        refrescarCatalogo();
+                        int unidades = entradas.stream().mapToInt(EntradaMercancia::cantidad).sum();
+                        JOptionPane.showMessageDialog(vistaPrincipal,
+                                "Entrada registrada: " + actualizados + " producto(s), "
+                                        + unidades + " unidad(es) agregadas.",
+                                "Operacion exitosa",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    }
+                });
+    }
+
+    private void mostrarReporteBajoStock() {
+        List<com.abarrotespro.modelo.Producto> bajoStock = modelo.obtenerProductosBajoStock();
+        if (bajoStock.isEmpty()) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "No hay productos en bajo stock. Todos cumplen el minimo configurado.",
+                    "Sin alertas",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Object[] opciones = {"Ver reporte", "Exportar CSV", "Cancelar"};
+        int opcion = JOptionPane.showOptionDialog(vistaPrincipal,
+                "Se encontraron " + bajoStock.size() + " producto(s) en bajo stock.",
+                "Reporte de bajo stock",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                opciones,
+                opciones[0]);
+
+        if (opcion == 0) {
+            ReporteBajoStockDialog.mostrar(vistaPrincipal, bajoStock);
+        } else if (opcion == 1) {
+            try {
+                var archivo = ExportadorInventario.exportarBajoStockCsv(bajoStock);
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Reporte exportado correctamente:\n" + archivo,
+                        "Exportacion exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "No se pudo exportar el reporte:\n" + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 

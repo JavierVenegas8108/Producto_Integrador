@@ -28,7 +28,7 @@ public class Producto {
         this.nombre = nombre;
         this.precio = precio;
         this.stock = stock;
-        this.stockMinimo = stockMinimo; 
+        this.stockMinimo = stockMinimo;
         this.emoji = emoji;
     }
     public int getId() {
