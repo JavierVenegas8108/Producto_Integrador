@@ -38,8 +38,10 @@ public class PanelInventario extends JPanel {
     private DefaultTableModel modeloTabla;
     private JTable tabla;
     private JButton botonNuevo;
+    private JButton botonRegistroMercancia;
+    private JButton botonReporteBajoStock;
     private List<Producto> productosActuales;
-    private BiConsumer<Integer, Integer> callbackSurtir;
+    private java.util.function.BiConsumer<Integer, DialogosInventario.DatosSurtido> callbackSurtir;
     private Consumer<Integer> callbackEliminar;
     private Consumer<Producto> callbackEditar;
 
@@ -74,10 +76,22 @@ public class PanelInventario extends JPanel {
         textos.add(desc);
 
         botonNuevo = ComponentesUi.crearBotonPrimario("+ Nuevo Producto", 40);
-        botonNuevo.setPreferredSize(new Dimension(180, 40));
+        botonNuevo.setPreferredSize(new Dimension(170, 40));
+
+        botonRegistroMercancia = ComponentesUi.crearBotonSecundario("Registro Mercancia", 40);
+        botonRegistroMercancia.setPreferredSize(new Dimension(170, 40));
+
+        botonReporteBajoStock = ComponentesUi.crearBotonSecundario("Bajo Stock", 40);
+        botonReporteBajoStock.setPreferredSize(new Dimension(120, 40));
+
+        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        acciones.setOpaque(false);
+        acciones.add(botonReporteBajoStock);
+        acciones.add(botonRegistroMercancia);
+        acciones.add(botonNuevo);
 
         panel.add(textos, BorderLayout.WEST);
-        panel.add(botonNuevo, BorderLayout.EAST);
+        panel.add(acciones, BorderLayout.EAST);
         return panel;
     }
 
@@ -182,9 +196,9 @@ public class PanelInventario extends JPanel {
 
     private void solicitarSurtido(Producto producto) {
         Window padre = SwingUtilities.getWindowAncestor(this);
-        DialogosInventario.mostrarSurtirInventario(padre, producto).ifPresent(cant -> {
+        DialogosInventario.mostrarSurtirInventario(padre, producto).ifPresent(datos -> {
             if (callbackSurtir != null) {
-                callbackSurtir.accept(producto.getId(), cant);
+                callbackSurtir.accept(producto.getId(), datos);
             }
         });
     }
@@ -200,6 +214,14 @@ public class PanelInventario extends JPanel {
         return botonNuevo;
     }
 
+    public JButton getBotonRegistroMercancia() {
+        return botonRegistroMercancia;
+    }
+
+    public JButton getBotonReporteBajoStock() {
+        return botonReporteBajoStock;
+    }
+
     public void alEditarProducto(Consumer<Producto> alEditar) {
         this.callbackEditar = alEditar;
     }
@@ -211,7 +233,7 @@ public class PanelInventario extends JPanel {
     }
 
     public void actualizarTabla(List<Producto> productos,
-                                BiConsumer<Integer, Integer> alSurtir,
+                                java.util.function.BiConsumer<Integer, DialogosInventario.DatosSurtido> alSurtir,
                                 Consumer<Integer> alEliminar) {
         this.productosActuales = productos;
         this.callbackSurtir = alSurtir;
@@ -224,7 +246,7 @@ public class PanelInventario extends JPanel {
                     GestorImagenProducto.cargarMiniaturaOEmoji(
                             p.getRutaImagen(), p.getEmoji(), 44, 44),
                     p.getNombre(),
-                    ComponentesUi.formatearMoneda(p.getPrecio()),
+                    ComponentesUi.formatearMoneda(p.getPrecioVenta()),
                     p.getStock(),
                     p.getStockMinimo(),
                     ""
@@ -282,19 +304,24 @@ public class PanelInventario extends JPanel {
 
             JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
             panel.setOpaque(true);
-            panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
+            panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Colores.FONDO_TARJETA);
 
+            JLabel etiqueta = ComponentesUi.crearEtiquetaStock(value instanceof Integer n ? n : 0);
             if (productosActuales != null && row < productosActuales.size()) {
                 Producto p = productosActuales.get(row);
-                if (p.getStock() <= p.getStockMinimo()) {
-                    JLabel lblAlerta = ComponentesUi.crearEtiquetaStock((Integer) value);
-                    lblAlerta.setForeground(Color.RED);
-                    panel.setBackground(new Color(255, 230, 230));
-                    panel.add(lblAlerta);
-                    return panel;
+                switch (p.getNivelAlertaStock()) {
+                    case CRITICO -> {
+                        panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : new Color(254, 226, 226));
+                        etiqueta.setForeground(Colores.ROJO);
+                    }
+                    case PREVENTIVO -> {
+                        panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Colores.AMARILLO_CLARO);
+                        etiqueta.setForeground(Colores.AMARILLO.darker());
+                    }
+                    default -> { }
                 }
             }
-            panel.add(ComponentesUi.crearEtiquetaStock((Integer) value));
+            panel.add(etiqueta);
             return panel;
         }
     }

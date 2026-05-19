@@ -1,12 +1,12 @@
-1	Leche Entera 1L	22.5	45	Lacteos	🥛	0	
-2	Pan Blanco Bolsa	38.0	20	Panaderia	🍞	0	
-3	Arroz 1kg	28.9	59	Abarrotes	🍚	0	
-4	Aceite Vegetal 1L	42.0	28	Abarrotes	🫒	0	
-5	Coca-Cola 600ml	18.5	80	Bebidas	🥤	0	
-6	Sabritas Original	19.0	55	Snacks	🥔	0	
-7	Huevo Carton 12pz	52.0	25	Lacteos	🥚	0	
-8	Jabon de Barra	15.0	39	Limpieza	🧼	0	
-9	Papel Higienico 4 rollos	35.0	16	Limpieza	🧻	0	
-10	Atun en Lata	24.5	35	Abarrotes	🐟	0	
-11	Manzana Roja kg	45.0	50	Frutas	🍎	0	
-12	Agua Natural 1.5L	12.0	100	Bebidas	💧	0	
+1	Leche Entera 1L	22.5	22.5	45	Lacteos	🥛	0		1
+2	Pan Blanco Bolsa	38.0	38.0	3	Panaderia	🍞	3		0
+3	Arroz 1kg	28.9	28.9	60	Abarrotes	🍚	0		0
+4	Aceite Vegetal 1L	42.0	42.0	29	Abarrotes	🫒	0		0
+5	Coca-Cola 600ml	18.5	18.5	80	Bebidas	🥤	0		0
+6	Sabritas Original	19.0	19.0	55	Snacks	🥔	0		0
+7	Huevo Carton 12pz	52.0	52.0	25	Lacteos	🥚	0		0
+8	Jabon de Barra	15.0	15.0	40	Limpieza	🧼	0		0
+9	Papel Higienico 4 rollos	35.0	35.0	18	Limpieza	🧻	0		0
+10	Atun en Lata	24.5	24.5	35	Abarrotes	🐟	0		0
+11	Manzana Roja kg	45.0	45.0	50	Frutas	🍎	0		0
+12	Agua Natural 1.5L	12.0	12.0	100	Bebidas	💧	0		0

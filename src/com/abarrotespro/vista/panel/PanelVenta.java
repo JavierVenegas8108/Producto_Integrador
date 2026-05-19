@@ -172,7 +172,7 @@ public class PanelVenta extends JPanel {
         nombre.setFont(new Font("Segoe UI", Font.BOLD, 12));
 
         JLabel detalle = new JLabel(linea.getCantidad() + " x "
-                + ComponentesUi.formatearMoneda(p.getPrecio()));
+                + ComponentesUi.formatearMoneda(linea.getPrecioVentaUnitario()));
         detalle.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         detalle.setForeground(Colores.GRIS_TEXTO);
 

@@ -37,6 +37,7 @@ public class ProveedoresPanel extends JPanel {
     private List<Proveedor> proveedoresActuales;
     private Consumer<Proveedor> callbackEditar;
     private Consumer<Proveedor> callbackDesactivar;
+    private Consumer<Proveedor> callbackHistorial;
 
     public ProveedoresPanel() {
         setBackground(Colores.FONDO_APP);
@@ -122,7 +123,7 @@ public class ProveedoresPanel extends JPanel {
         tabla.getColumnModel().getColumn(COL_CONTACTO).setPreferredWidth(160);
         tabla.getColumnModel().getColumn(COL_TELEFONO).setPreferredWidth(120);
         tabla.getColumnModel().getColumn(COL_ESTADO).setPreferredWidth(100);
-        tabla.getColumnModel().getColumn(COL_ACCIONES).setPreferredWidth(150);
+        tabla.getColumnModel().getColumn(COL_ACCIONES).setPreferredWidth(195);
 
         tabla.getColumnModel().getColumn(COL_ID).setCellRenderer(new CeldaIdRenderer());
         tabla.getColumnModel().getColumn(COL_ESTADO).setCellRenderer(new CeldaEstadoRenderer());
@@ -138,14 +139,24 @@ public class ProveedoresPanel extends JPanel {
                 }
                 Proveedor proveedor = proveedoresActuales.get(fila);
                 if (columna == COL_ACCIONES) {
-                    Rectangle celda = tabla.getCellRect(fila, columna, true);
-                    int mitad = celda.x + celda.width / 2;
-                    if (e.getX() < mitad) {
-                        if (callbackEditar != null) {
-                            callbackEditar.accept(proveedor);
+                    int accion = detectarAccionClic(e, fila, columna);
+                    switch (accion) {
+                        case 0 -> {
+                            if (callbackEditar != null) {
+                                callbackEditar.accept(proveedor);
+                            }
                         }
-                    } else if (proveedor.isActivo() && callbackDesactivar != null) {
-                        callbackDesactivar.accept(proveedor);
+                        case 1 -> {
+                            if (callbackHistorial != null) {
+                                callbackHistorial.accept(proveedor);
+                            }
+                        }
+                        case 2 -> {
+                            if (proveedor.isActivo() && callbackDesactivar != null) {
+                                callbackDesactivar.accept(proveedor);
+                            }
+                        }
+                        default -> { }
                     }
                 }
             }
@@ -171,6 +182,23 @@ public class ProveedoresPanel extends JPanel {
 
     public void alDesactivar(Consumer<Proveedor> callback) {
         this.callbackDesactivar = callback;
+    }
+
+    public void alVerHistorial(Consumer<Proveedor> callback) {
+        this.callbackHistorial = callback;
+    }
+
+    private int detectarAccionClic(MouseEvent e, int fila, int columna) {
+        Rectangle celda = tabla.getCellRect(fila, columna, true);
+        int relX = e.getX() - celda.x;
+        int tercio = celda.width / 3;
+        if (relX < tercio) {
+            return 0;
+        }
+        if (relX < tercio * 2) {
+            return 1;
+        }
+        return 2;
     }
 
     public void actualizarTabla(List<Proveedor> proveedores) {
@@ -211,7 +239,7 @@ public class ProveedoresPanel extends JPanel {
             JLabel lbl = (JLabel) super.getTableCellRendererComponent(
                     table, value, isSelected, hasFocus, row, column);
             boolean activo = "Activo".equals(value);
-            lbl.setForeground(activo ? Colores.VERDE : Colores.GRIS_TEXTO);
+            lbl.setForeground(activo ? Colores.VERDE : Colores.ROJO);
             lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
             return lbl;
@@ -222,7 +250,7 @@ public class ProveedoresPanel extends JPanel {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8));
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 8));
             panel.setOpaque(true);
             panel.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Color.WHITE);
 
@@ -231,6 +259,13 @@ public class ProveedoresPanel extends JPanel {
             editar.setBorderPainted(false);
             editar.setContentAreaFilled(false);
             editar.setEnabled(false);
+
+            JButton historial = new JButton(IconosUi.crear(IconosUi.TipoIcono.OJO, 16, Colores.AZUL_PRIMARIO));
+            historial.setPreferredSize(new Dimension(32, 28));
+            historial.setBorderPainted(false);
+            historial.setContentAreaFilled(false);
+            historial.setToolTipText("Ver historial de surtidos");
+            historial.setEnabled(false);
 
             JButton desactivar = new JButton("Desactivar");
             desactivar.setFont(new Font("Segoe UI", Font.BOLD, 10));
@@ -242,6 +277,7 @@ public class ProveedoresPanel extends JPanel {
             desactivar.setEnabled(false);
 
             panel.add(editar);
+            panel.add(historial);
             panel.add(desactivar);
             return panel;
         }

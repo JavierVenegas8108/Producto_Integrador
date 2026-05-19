@@ -1,5 +1,6 @@
 package com.abarrotespro.modelo;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,8 +8,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.abarrotespro.modelo.dao.PosPersistencia;
+import com.abarrotespro.modelo.EntradaMercancia;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
+import com.abarrotespro.modelo.servicio.LectorTickets;
 import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
 
 /**
@@ -21,6 +24,7 @@ public class SistemaPos {
     private final List<Proveedor> proveedores;
     private final List<Venta> ventasDelDia;
     private final List<Corte> historialCortes;
+    private final List<RegistroSurtido> historialSurtidos;
     private final PosPersistencia persistencia;
 
     private Usuario usuarioActivo;
@@ -38,6 +42,7 @@ public class SistemaPos {
         proveedores = new ArrayList<>();
         ventasDelDia = new ArrayList<>();
         historialCortes = new ArrayList<>();
+        historialSurtidos = new ArrayList<>();
         persistencia = new PosPersistencia();
         contadorVentas = 0;
         contadorProductos = 0;
@@ -60,11 +65,19 @@ public class SistemaPos {
         }
     }
 
+    public void cargarHistorialSurtidos(List<RegistroSurtido> registros) {
+        historialSurtidos.clear();
+        if (registros != null) {
+            historialSurtidos.addAll(registros);
+        }
+    }
+
     public void cargarEstado(EstadoPersistido estado) {
         productos.clear();
         proveedores.clear();
         ventasDelDia.clear();
         historialCortes.clear();
+        historialSurtidos.clear();
         productos.addAll(estado.getProductos());
         proveedores.addAll(estado.getProveedores());
         ventasDelDia.addAll(estado.getVentas());
@@ -143,6 +156,10 @@ public class SistemaPos {
         return historialCortes;
     }
 
+    public List<RegistroSurtido> getHistorialSurtidos() {
+        return historialSurtidos;
+    }
+
     public Usuario getUsuarioActivo() {
         return usuarioActivo;
     }
@@ -212,31 +229,61 @@ public class SistemaPos {
     }
 
     /** Agrega producto al ticket actual validando stock. */
-    public String agregarAlTicket(int idProducto) {
+    public String agregarAlTicket(int idProducto, int cantidad) {
         if (ventaActual == null) {
             return "No hay venta activa";
+        }
+        if (cantidad <= 0) {
+            return "Cantidad invalida";
         }
         Producto producto = buscarProductoPorId(idProducto);
         if (producto == null) {
             return "Producto no encontrado";
         }
-        if (!producto.tieneStock()) {
-            return "Sin stock disponible";
+        int enTicket = cantidadEnTicket(producto.getId());
+        if (producto.getStock() < cantidad) {
+            return "Stock insuficiente (disponible: " + producto.getStock() + ")";
         }
-        ventaActual.agregarProducto(producto, 1);
-        producto.reducirStock(1);
+        ventaActual.agregarProducto(producto, cantidad);
+        producto.reducirStock(cantidad);
+        persistir();
+        return null;
+    }
+
+    private int cantidadEnTicket(int idProducto) {
+        if (ventaActual == null) {
+            return 0;
+        }
+        return ventaActual.getLineas().stream()
+                .filter(l -> l.getProducto().getId() == idProducto)
+                .mapToInt(LineaVenta::getCantidad)
+                .sum();
+    }
+
+    public String reducirLineaTicket(int indice, int cantidad) {
+        if (ventaActual == null || indice < 0 || indice >= ventaActual.getLineas().size()) {
+            return "Linea no valida";
+        }
+        if (cantidad <= 0) {
+            return "Cantidad invalida";
+        }
+        LineaVenta linea = ventaActual.getLineas().get(indice);
+        if (cantidad > linea.getCantidad()) {
+            return "No puede eliminar mas de lo agregado (" + linea.getCantidad() + ")";
+        }
+        linea.getProducto().aumentarStock(cantidad);
+        if (cantidad == linea.getCantidad()) {
+            ventaActual.eliminarLinea(indice);
+        } else {
+            linea.setCantidad(linea.getCantidad() - cantidad);
+        }
         persistir();
         return null;
     }
 
     public void eliminarLineaTicket(int indice) {
-        if (ventaActual == null || indice < 0 || indice >= ventaActual.getLineas().size()) {
-            return;
-        }
-        LineaVenta linea = ventaActual.getLineas().get(indice);
-        linea.getProducto().aumentarStock(linea.getCantidad());
-        ventaActual.eliminarLinea(indice);
-        persistir();
+        reducirLineaTicket(indice, ventaActual != null && indice >= 0 && indice < ventaActual.getLineas().size()
+                ? ventaActual.getLineas().get(indice).getCantidad() : 0);
     }
 
     /**
@@ -263,13 +310,55 @@ public class SistemaPos {
         return productos.stream().filter(p -> p.getId() == id).findFirst().orElse(null);
     }
 
-    public void surtirProducto(int id, int cantidad) {
+    public void surtirProducto(int id, int cantidad, double precioCompra) {
         Producto p = buscarProductoPorId(id);
-        if (p != null) {
-            p.aumentarStock(cantidad);
-            persistir();
-            System.out.println("Stock actualizado para producto #" + id);
+        if (p == null || cantidad <= 0) {
+            return;
         }
+        p.aumentarStock(cantidad);
+        if (precioCompra >= 0) {
+            p.setPrecioCompra(precioCompra);
+        }
+        String nombreProv = "—";
+        int idProv = p.getIdProveedor();
+        if (idProv > 0) {
+            Proveedor prov = buscarProveedorPorId(idProv);
+            if (prov != null) {
+                nombreProv = prov.getRazonSocial();
+            }
+        }
+        historialSurtidos.add(0, new RegistroSurtido(
+                java.time.LocalDateTime.now(), p.getId(), p.getNombre(),
+                cantidad, p.getPrecioCompra(), idProv, nombreProv));
+        persistir();
+    }
+
+    /**
+     * Registra multiples entradas de mercancia.
+     * @return numero de productos actualizados
+     */
+    public int registrarEntradaMercanciaMasiva(List<EntradaMercancia> entradas) {
+        if (entradas == null || entradas.isEmpty()) {
+            return 0;
+        }
+        int actualizados = 0;
+        for (EntradaMercancia entrada : entradas) {
+            if (entrada.cantidad() > 0) {
+                surtirProducto(entrada.productoId(), entrada.cantidad(), -1);
+                actualizados++;
+            }
+        }
+        if (actualizados > 0) {
+            persistir();
+        }
+        return actualizados;
+    }
+
+    /** Productos cuya existencia es menor o igual al stock minimo configurado. */
+    public List<Producto> obtenerProductosBajoStock() {
+        return productos.stream()
+                .filter(p -> p.getStock() <= p.getStockMinimo())
+                .collect(Collectors.toList());
     }
 
     public void eliminarProducto(int id) {
@@ -277,15 +366,15 @@ public class SistemaPos {
         persistir();
     }
 
-    public Producto crearProducto(String nombre, double precio, int stock, int stockMinimo) {
-        return crearProducto(nombre, precio, stock, stockMinimo, null);
+    public Producto crearProducto(String nombre, double precioVenta, int stock, int stockMinimo) {
+        return crearProducto(nombre, precioVenta, precioVenta, stock, stockMinimo, 0, null);
     }
 
-    public Producto crearProducto(String nombre, double precio, int stock, int stockMinimo, String rutaImagen) {
+    public Producto crearProducto(String nombre, double precioCompra, double precioVenta,
+            int stock, int stockMinimo, int idProveedor, String rutaImagen) {
         contadorProductos++;
-        Producto nuevo = new Producto(contadorProductos, nombre, precio, stock, "General", "📦");
-        nuevo.setStockMinimo(stockMinimo);
-        nuevo.setRutaImagen(rutaImagen);
+        Producto nuevo = new Producto(contadorProductos, nombre, precioCompra, precioVenta,
+                stock, "General", "📦", stockMinimo, idProveedor, rutaImagen);
         productos.add(nuevo);
         persistir();
         return nuevo;
@@ -306,9 +395,53 @@ public class SistemaPos {
         String filtro = texto.trim().toLowerCase();
         return proveedores.stream()
                 .filter(p -> p.getRazonSocial().toLowerCase().contains(filtro)
-                        || p.getNombreContacto().toLowerCase().contains(filtro)
-                        || p.getTelefono().contains(filtro))
+                        || p.getNombreContacto().toLowerCase().contains(filtro))
                 .collect(Collectors.toList());
+    }
+
+    public List<Proveedor> getProveedoresActivos() {
+        return proveedores.stream().filter(Proveedor::isActivo).collect(Collectors.toList());
+    }
+
+    public List<RegistroSurtido> getSurtidosPorProveedor(int idProveedor) {
+        return historialSurtidos.stream()
+                .filter(r -> r.getProveedorId() == idProveedor)
+                .collect(Collectors.toList());
+    }
+
+    public List<Producto> getProductosPorProveedor(int idProveedor) {
+        return productos.stream()
+                .filter(p -> p.getIdProveedor() == idProveedor)
+                .collect(Collectors.toList());
+    }
+
+    public Venta buscarVentaPorId(int id) {
+        return ventasDelDia.stream().filter(v -> v.getId() == id).findFirst().orElse(null);
+    }
+
+    /** Devolucion: restaura stock, ajusta caja y anula archivo de ticket. */
+    public String realizarDevolucion(String nombreArchivo) {
+        if (LectorTickets.esCancelado(nombreArchivo)) {
+            return "Este ticket ya fue anulado";
+        }
+        int ventaId = LectorTickets.extraerIdVenta(nombreArchivo);
+        Venta venta = ventaId > 0 ? buscarVentaPorId(ventaId) : null;
+        if (venta == null) {
+            return "No se encontro la venta asociada al ticket";
+        }
+        for (LineaVenta linea : venta.getLineas()) {
+            linea.getProducto().aumentarStock(linea.getCantidad());
+        }
+        double monto = venta.getTotal();
+        totalEnCaja = Math.max(0, totalEnCaja - monto);
+        ventasDelDia.remove(venta);
+        try {
+            LectorTickets.marcarComoCancelado(nombreArchivo);
+        } catch (IOException e) {
+            return "Devolucion aplicada en sistema, pero no se pudo renombrar el archivo: " + e.getMessage();
+        }
+        persistir();
+        return null;
     }
 
     public Proveedor buscarProveedorPorId(int id) {
@@ -346,6 +479,10 @@ public class SistemaPos {
 
     public double getVentasHoy() {
         return ventasDelDia.stream().mapToDouble(Venta::getTotal).sum();
+    }
+
+    public double getUtilidadHoy() {
+        return ventasDelDia.stream().mapToDouble(Venta::getUtilidad).sum();
     }
 
     public double getPromedioTicket() {

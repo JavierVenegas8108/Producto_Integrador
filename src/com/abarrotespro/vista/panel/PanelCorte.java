@@ -97,7 +97,7 @@ public class PanelCorte extends JPanel {
 
         etiquetaVentasHoy = crearTarjetaPequena(fila, "Ventas hoy", "$0.00");
         etiquetaPromedio = crearTarjetaPequena(fila, "Promedio Ticket", "$0.00");
-        etiquetaEntradas = crearTarjetaPequena(fila, "Entradas Manuales", "$0.00");
+        etiquetaEntradas = crearTarjetaPequena(fila, "Utilidad hoy", "$0.00");
         return fila;
     }
 

@@ -18,6 +18,8 @@ public final class Colores {
     public static Color GRIS_TEXTO = new Color(100, 116, 139);
     public static Color GRIS_BORDE = new Color(226, 232, 240);
     public static Color GRIS_SIDEBAR = new Color(248, 250, 252);
+    public static Color AMARILLO = new Color(234, 179, 8);
+    public static Color AMARILLO_CLARO = new Color(254, 243, 199);
     public static Color VERDE = new Color(34, 197, 94);
     public static Color VERDE_CLARO = new Color(220, 252, 231);
     public static Color ROJO = new Color(239, 68, 68);

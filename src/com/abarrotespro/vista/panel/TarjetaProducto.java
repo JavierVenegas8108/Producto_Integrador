@@ -59,7 +59,7 @@ public class TarjetaProducto extends JPanel {
         nombre.setForeground(Colores.NEGRO_TEXTO);
         nombre.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel precio = new JLabel(ComponentesUi.formatearMoneda(producto.getPrecio()), SwingConstants.CENTER);
+        JLabel precio = new JLabel(ComponentesUi.formatearMoneda(producto.getPrecioVenta()), SwingConstants.CENTER);
         precio.setFont(new Font("Segoe UI", Font.BOLD, 14));
         precio.setForeground(Colores.AZUL_PRIMARIO);
         precio.setAlignmentX(Component.CENTER_ALIGNMENT);

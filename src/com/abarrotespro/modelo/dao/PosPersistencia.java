@@ -15,6 +15,7 @@ import com.abarrotespro.modelo.Corte;
 import com.abarrotespro.modelo.LineaVenta;
 import com.abarrotespro.modelo.Producto;
 import com.abarrotespro.modelo.Proveedor;
+import com.abarrotespro.modelo.RegistroSurtido;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
@@ -44,6 +45,7 @@ public class PosPersistencia {
             guardarProveedores(sistema.getProveedores());
             guardarVentas(sistema.getVentasDelDia());
             guardarCortes(sistema.getHistorialCortes());
+            guardarHistorialSurtidos(sistema.getHistorialSurtidos());
             guardarEstado(sistema.exportarEstado());
         } catch (IOException e) {
             System.err.println("Error al guardar datos: " + e.getMessage());
@@ -73,6 +75,7 @@ public class PosPersistencia {
                 productos, ventas, cortes, proveedores, totalCaja, entradas,
                 contVentas, contProd, contCortes, contProv);
         sistema.cargarEstado(estado);
+        sistema.cargarHistorialSurtidos(cargarHistorialSurtidos());
     }
 
     private void guardarEstado(EstadoPersistido estado) throws IOException {
@@ -95,12 +98,14 @@ public class PosPersistencia {
             lineas.add(String.join(SEP,
                     String.valueOf(p.getId()),
                     escapar(p.getNombre()),
-                    String.valueOf(p.getPrecio()),
+                    String.valueOf(p.getPrecioCompra()),
+                    String.valueOf(p.getPrecioVenta()),
                     String.valueOf(p.getStock()),
                     escapar(p.getCategoria()),
                     escapar(p.getEmoji()),
                     String.valueOf(p.getStockMinimo()),
-                    escapar(p.getRutaImagen() != null ? p.getRutaImagen() : "")));
+                    escapar(p.getRutaImagen() != null ? p.getRutaImagen() : ""),
+                    String.valueOf(p.getIdProveedor())));
         }
         Files.write(directorioDatos.resolve("productos.tsv"), lineas, StandardCharsets.UTF_8);
     }
@@ -119,18 +124,75 @@ public class PosPersistencia {
             if (p.length < 7) {
                 continue;
             }
-            Producto producto = new Producto(
-                    Integer.parseInt(p[0]),
-                    desescapar(p[1]),
-                    Double.parseDouble(p[2]),
-                    Integer.parseInt(p[3]),
-                    desescapar(p[4]),
-                    desescapar(p[5]));
-            producto.setStockMinimo(Integer.parseInt(p[6]));
-            if (p.length >= 8) {
-                producto.setRutaImagen(desescapar(p[7]));
+            Producto producto;
+            if (p.length >= 10) {
+                producto = new Producto(
+                        Integer.parseInt(p[0]),
+                        desescapar(p[1]),
+                        Double.parseDouble(p[2]),
+                        Double.parseDouble(p[3]),
+                        Integer.parseInt(p[4]),
+                        desescapar(p[5]),
+                        desescapar(p[6]),
+                        Integer.parseInt(p[7]),
+                        Integer.parseInt(p[9]),
+                        desescapar(p[8]));
+            } else {
+                double precio = Double.parseDouble(p[2]);
+                producto = new Producto(
+                        Integer.parseInt(p[0]),
+                        desescapar(p[1]),
+                        precio,
+                        precio,
+                        Integer.parseInt(p[3]),
+                        desescapar(p[4]),
+                        desescapar(p[5]),
+                        Integer.parseInt(p[6]),
+                        0,
+                        p.length >= 8 ? desescapar(p[7]) : null);
             }
             lista.add(producto);
+        }
+        return lista;
+    }
+
+    private void guardarHistorialSurtidos(List<RegistroSurtido> registros) throws IOException {
+        List<String> lineas = new ArrayList<>();
+        for (RegistroSurtido r : registros) {
+            lineas.add(String.join(SEP,
+                    r.getFechaHora().format(ISO),
+                    String.valueOf(r.getProductoId()),
+                    escapar(r.getNombreProducto()),
+                    String.valueOf(r.getCantidad()),
+                    String.valueOf(r.getPrecioCompra()),
+                    String.valueOf(r.getProveedorId()),
+                    escapar(r.getNombreProveedor())));
+        }
+        Files.write(directorioDatos.resolve("surtidos.tsv"), lineas, StandardCharsets.UTF_8);
+    }
+
+    private List<RegistroSurtido> cargarHistorialSurtidos() throws IOException {
+        Path archivo = directorioDatos.resolve("surtidos.tsv");
+        if (!Files.exists(archivo)) {
+            return new ArrayList<>();
+        }
+        List<RegistroSurtido> lista = new ArrayList<>();
+        for (String linea : Files.readAllLines(archivo, StandardCharsets.UTF_8)) {
+            if (linea.isBlank()) {
+                continue;
+            }
+            String[] p = linea.split(SEP, -1);
+            if (p.length < 6) {
+                continue;
+            }
+            lista.add(new RegistroSurtido(
+                    LocalDateTime.parse(p[0], ISO),
+                    Integer.parseInt(p[1]),
+                    desescapar(p[2]),
+                    Integer.parseInt(p[3]),
+                    Double.parseDouble(p[4]),
+                    Integer.parseInt(p[5]),
+                    p.length >= 7 ? desescapar(p[6]) : "—"));
         }
         return lista;
     }
@@ -197,7 +259,8 @@ public class PosPersistencia {
                         String.valueOf(prod.getId()),
                         escapar(prod.getNombre()),
                         String.valueOf(linea.getCantidad()),
-                        String.valueOf(prod.getPrecio())));
+                        String.valueOf(linea.getPrecioVentaUnitario()),
+                        String.valueOf(linea.getPrecioCompraUnitario())));
             }
         }
         Files.write(directorioDatos.resolve("ventas.tsv"), lineasVentas, StandardCharsets.UTF_8);
@@ -236,13 +299,15 @@ public class PosPersistencia {
                     continue;
                 }
                 int prodId = Integer.parseInt(d[1]);
+                double precioVenta = Double.parseDouble(d[4]);
+                double precioCompra = d.length >= 6 ? Double.parseDouble(d[5]) : precioVenta;
                 Producto producto = productos.stream()
                         .filter(pr -> pr.getId() == prodId)
                         .findFirst()
                         .orElseGet(() -> new Producto(prodId, desescapar(d[2]),
-                                Double.parseDouble(d[4]), 0, "General", "📦"));
+                                precioCompra, precioVenta, 0, "General", "📦", 0, 0, null));
                 int cantidad = Integer.parseInt(d[3]);
-                venta.agregarProducto(producto, cantidad);
+                venta.agregarLinea(new LineaVenta(producto, cantidad, precioVenta, precioCompra));
             }
             ventas.add(venta);
         }

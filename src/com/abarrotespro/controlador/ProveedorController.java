@@ -8,6 +8,7 @@ import javax.swing.JOptionPane;
 
 import com.abarrotespro.modelo.Proveedor;
 import com.abarrotespro.modelo.SistemaPos;
+import com.abarrotespro.vista.dialog.HistorialProveedorDialog;
 import com.abarrotespro.vista.dialog.ProveedorDialog;
 import com.abarrotespro.vista.panel.ProveedoresPanel;
 
@@ -30,6 +31,7 @@ public class ProveedorController {
         vista.getBotonNuevo().addActionListener(e -> mostrarDialogoNuevo());
         vista.alEditar(this::mostrarDialogoEditar);
         vista.alDesactivar(this::desactivarProveedor);
+        vista.alVerHistorial(this::mostrarHistorial);
         vista.getCampoBusqueda().addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
@@ -72,6 +74,12 @@ public class ProveedorController {
                     "Proveedor actualizado correctamente", "Operacion exitosa",
                     JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+
+    private void mostrarHistorial(Proveedor proveedor) {
+        HistorialProveedorDialog.mostrar(ventanaPadre, proveedor,
+                modelo.getProductosPorProveedor(proveedor.getId()),
+                modelo.getSurtidosPorProveedor(proveedor.getId()));
     }
 
     private void desactivarProveedor(Proveedor proveedor) {

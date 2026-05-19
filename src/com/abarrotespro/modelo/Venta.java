@@ -9,11 +9,15 @@ import java.util.List;
  */
 public class Venta {
 
+    /** Tasa de IVA aplicada al subtotal (16% Mexico). */
+    public static final double TASA_IVA = 0.16;
+
     private int id;
     private List<LineaVenta> lineas;
     private LocalDateTime fechaHora;
     private String usuarioNombre;
     private boolean cerrada;
+    private double descuento;
 
     public Venta(int id, String usuarioNombre) {
         this.id = id;
@@ -53,13 +57,25 @@ public class Venta {
 
     /** Agrega un producto al ticket o incrementa su cantidad. */
     public void agregarProducto(Producto producto, int cantidad) {
-        for (LineaVenta linea : lineas) {
-            if (linea.getProducto().getId() == producto.getId()) {
-                linea.aumentarCantidad(cantidad);
+        agregarLinea(new LineaVenta(producto, cantidad));
+    }
+
+    public void agregarLinea(LineaVenta linea) {
+        for (LineaVenta existente : lineas) {
+            if (existente.getProducto().getId() == linea.getProducto().getId()) {
+                existente.aumentarCantidad(linea.getCantidad());
                 return;
             }
         }
-        lineas.add(new LineaVenta(producto, cantidad));
+        lineas.add(linea);
+    }
+
+    public double getUtilidad() {
+        return lineas.stream().mapToDouble(LineaVenta::getUtilidad).sum();
+    }
+
+    public double getCostoTotal() {
+        return lineas.stream().mapToDouble(LineaVenta::getCostoTotal).sum();
     }
 
     public void eliminarLinea(int indice) {
@@ -68,8 +84,30 @@ public class Venta {
         }
     }
 
-    public double getTotal() {
+    /** Suma de importes de linea sin impuestos. */
+    public double getSubtotal() {
         return lineas.stream().mapToDouble(LineaVenta::getSubtotal).sum();
+    }
+
+    public double getMontoIva() {
+        return getSubtotal() * TASA_IVA;
+    }
+
+    public double getDescuento() {
+        return descuento;
+    }
+
+    public void setDescuento(double descuento) {
+        this.descuento = Math.max(0, descuento);
+    }
+
+    /** Total final: subtotal + IVA - descuento. */
+    public double getTotal() {
+        return getSubtotal() + getMontoIva() - descuento;
+    }
+
+    public int getCantidadTotalArticulos() {
+        return lineas.stream().mapToInt(LineaVenta::getCantidad).sum();
     }
 
     public boolean estaVacia() {

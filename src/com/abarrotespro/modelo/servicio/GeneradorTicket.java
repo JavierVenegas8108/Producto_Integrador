@@ -30,15 +30,15 @@ public final class GeneradorTicket {
         sb.append("========================================\n");
         sb.append("           ").append(NOMBRE_NEGOCIO.toUpperCase()).append("\n");
         sb.append("========================================\n");
-        sb.append("Fecha: ").append(venta.getFechaHora().format(FECHA)).append("\n");
-        sb.append("Hora:  ").append(venta.getFechaHora().format(HORA)).append("\n");
-        sb.append("Ticket #: ").append(venta.getId()).append("\n");
-        sb.append("Atendio: ").append(venta.getUsuarioNombre()).append("\n");
+        sb.append("Fecha:              ").append(venta.getFechaHora().format(FECHA)).append("\n");
+        sb.append("Hora:               ").append(venta.getFechaHora().format(HORA)).append("\n");
+        sb.append("ID Transaccion:     ").append(venta.getId()).append("\n");
+        sb.append("Atendio:            ").append(venta.getUsuarioNombre()).append("\n");
         sb.append("----------------------------------------\n");
         sb.append("DETALLE DE COMPRA\n");
         sb.append("----------------------------------------\n");
         sb.append(String.format("%-22s %4s %8s %10s%n",
-                "Producto", "Cant", "P.Unit", "Importe"));
+                "Producto", "Cant", "P.Unit", "Subtotal"));
         sb.append("----------------------------------------\n");
 
         for (LineaVenta linea : venta.getLineas()) {
@@ -46,12 +46,20 @@ public final class GeneradorTicket {
             sb.append(String.format(Locale.US, "%-22s %4d %8.2f %10.2f%n",
                     nombre,
                     linea.getCantidad(),
-                    linea.getProducto().getPrecio(),
+                    linea.getPrecioVentaUnitario(),
                     linea.getSubtotal()));
         }
 
         sb.append("----------------------------------------\n");
-        sb.append(String.format(Locale.US, "%42s%n", "TOTAL: $" + String.format("%.2f", venta.getTotal())));
+        sb.append(String.format(Locale.US, "%-28s %12d%n", "Cantidad total articulos:", venta.getCantidadTotalArticulos()));
+        sb.append(String.format(Locale.US, "%-28s %12.2f%n", "Subtotal:", venta.getSubtotal()));
+        sb.append(String.format(Locale.US, "%-28s %12.2f%n",
+                "IVA (" + (int) (Venta.TASA_IVA * 100) + "%):", venta.getMontoIva()));
+        if (venta.getDescuento() > 0) {
+            sb.append(String.format(Locale.US, "%-28s %12.2f%n", "Descuento:", venta.getDescuento()));
+        }
+        sb.append("----------------------------------------\n");
+        sb.append(String.format(Locale.US, "%-28s %12.2f%n", "TOTAL FINAL:", venta.getTotal()));
         sb.append("========================================\n");
         sb.append("   Gracias por su preferencia!\n");
         sb.append("        Vuelva pronto.\n");

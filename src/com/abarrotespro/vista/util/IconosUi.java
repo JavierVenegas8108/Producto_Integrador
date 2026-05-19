@@ -12,7 +12,7 @@ public final class IconosUi {
 
     public enum TipoIcono {
         LAPIZ, BASURA, VENTA, INVENTARIO, TICKETS, PROVEEDORES, CORTE, CONFIGURACION,
-        USUARIO, CANDADO, BUSQUEDA
+        USUARIO, CANDADO, BUSQUEDA, OJO
     }
 
     private IconosUi() {
@@ -38,6 +38,7 @@ public final class IconosUi {
                     case USUARIO -> dibujarUsuario(g2, tamano);
                     case CANDADO -> dibujarCandado(g2, tamano);
                     case BUSQUEDA -> dibujarLupa(g2, tamano);
+                    case OJO -> dibujarOjo(g2, tamano);
                     default -> { }
                 }
                 g2.dispose();
@@ -166,6 +167,14 @@ public final class IconosUi {
         g2.draw(new RoundRectangle2D.Float(w * 0.28f, h * 0.48f, w * 0.44f, h * 0.38f, 4, 4));
         g2.draw(new RoundRectangle2D.Float(w * 0.36f, h * 0.18f, w * 0.28f, h * 0.34f, 8, 8));
         g2.drawLine((int) (w * 0.5), (int) (h * 0.62), (int) (w * 0.5), (int) (h * 0.72));
+    }
+
+    private static void dibujarOjo(Graphics2D g2, int s) {
+        float w = s;
+        float h = s;
+        g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.drawOval((int) (w * 0.2), (int) (h * 0.28), (int) (w * 0.6), (int) (h * 0.38));
+        g2.fillOval((int) (w * 0.42), (int) (h * 0.4), (int) (w * 0.16), (int) (h * 0.16));
     }
 
     private static void dibujarLupa(Graphics2D g2, int s) {

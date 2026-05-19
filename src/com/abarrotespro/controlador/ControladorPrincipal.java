@@ -19,10 +19,13 @@ import javax.swing.UIManager;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
+import com.abarrotespro.modelo.EntradaMercancia;
+import com.abarrotespro.modelo.servicio.ExportadorInventario;
 import com.abarrotespro.modelo.servicio.ExportadorVentas;
 import com.abarrotespro.modelo.servicio.GeneradorTicket;
 import com.abarrotespro.modelo.servicio.LectorTickets;
 import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
+import com.abarrotespro.vista.dialog.ReporteBajoStockDialog;
 import com.abarrotespro.vista.dialog.ReporteVentasDialog;
 import com.abarrotespro.vista.dialog.VistaPreviaTicketDialog;
 import com.abarrotespro.vista.panel.PanelConfiguracion;
@@ -34,6 +37,7 @@ import com.abarrotespro.vista.panel.PanelCorte;
 import com.abarrotespro.vista.panel.PanelInventario;
 import com.abarrotespro.vista.panel.PanelVenta;
 import com.abarrotespro.vista.util.DialogosInventario;
+import com.abarrotespro.vista.util.DialogosVenta;
 import com.abarrotespro.vista.util.GestorImagenProducto;
 
 /**
@@ -169,13 +173,19 @@ public class ControladorPrincipal {
 
     private void agregarProductoAlTicket(ActionEvent e) {
         int idProducto = e.getID();
-        String error = modelo.agregarAlTicket(idProducto);
-        if (error != null) {
-            JOptionPane.showMessageDialog(vistaPrincipal, error, "Aviso",
-                    JOptionPane.WARNING_MESSAGE);
-        } else {
-            refrescarVenta();
+        com.abarrotespro.modelo.Producto producto = modelo.buscarProductoPorId(idProducto);
+        if (producto == null) {
+            return;
         }
+        DialogosVenta.preguntarCantidadAgregar(vistaPrincipal, producto).ifPresent(cantidad -> {
+            String error = modelo.agregarAlTicket(idProducto, cantidad);
+            if (error != null) {
+                JOptionPane.showMessageDialog(vistaPrincipal, error, "Aviso",
+                        JOptionPane.WARNING_MESSAGE);
+            } else {
+                refrescarVenta();
+            }
+        });
     }
 
     private void cobrarVenta() {
@@ -201,13 +211,10 @@ public class ControladorPrincipal {
             }
             
             StringBuilder alertaBajoStock = new StringBuilder();
-            
-            for (com.abarrotespro.modelo.Producto p : modelo.getProductos()) {
-                if (p.getStock() <= p.getStockMinimo()) {
-                    alertaBajoStock.append("• ").append(p.getNombre())
-                                   .append(" (Stock actual: ").append(p.getStock())
-                                   .append(" | Mínimo: ").append(p.getStockMinimo()).append(")\n");
-                }
+            for (com.abarrotespro.modelo.Producto p : modelo.obtenerProductosBajoStock()) {
+                alertaBajoStock.append("• ").append(p.getNombre())
+                        .append(" (Stock actual: ").append(p.getStock())
+                        .append(" | Minimo: ").append(p.getStockMinimo()).append(")\n");
             }
             
             
@@ -240,8 +247,21 @@ public class ControladorPrincipal {
         vistaPrincipal.getPanelVenta().actualizarTicket(
                 modelo.getVentaActual(),
                 indice -> {
-                    modelo.eliminarLineaTicket(indice);
-                    refrescarVenta();
+                    if (modelo.getVentaActual() == null
+                            || indice < 0 || indice >= modelo.getVentaActual().getLineas().size()) {
+                        return;
+                    }
+                    var linea = modelo.getVentaActual().getLineas().get(indice);
+                    DialogosVenta.preguntarCantidadEliminar(vistaPrincipal,
+                            linea.getProducto().getNombre(), linea.getCantidad())
+                            .ifPresent(cant -> {
+                                String error = modelo.reducirLineaTicket(indice, cant);
+                                if (error != null) {
+                                    JOptionPane.showMessageDialog(vistaPrincipal, error,
+                                            "Aviso", JOptionPane.WARNING_MESSAGE);
+                                }
+                                refrescarVenta();
+                            });
                 });
     }
 
@@ -249,11 +269,13 @@ public class ControladorPrincipal {
         PanelInventario panel = vistaPrincipal.getPanelInventario();
 
         panel.getBotonNuevo().addActionListener(e -> mostrarDialogoNuevoProducto());
+        panel.getBotonRegistroMercancia().addActionListener(e -> mostrarRegistroMercancia());
+        panel.getBotonReporteBajoStock().addActionListener(e -> mostrarReporteBajoStock());
 
         panel.actualizarTabla(
                 modelo.getProductos(),
-                (id, cantidad) -> {
-                    modelo.surtirProducto(id, cantidad);
+                (id, datos) -> {
+                    modelo.surtirProducto(id, datos.cantidad(), datos.precioCompra());
                     refrescarInventario();
                     refrescarCatalogo();
                 },
@@ -266,11 +288,14 @@ public class ControladorPrincipal {
     }
 
     private void mostrarDialogoEditarProducto(com.abarrotespro.modelo.Producto producto) {
-        DialogosInventario.mostrarEditarProducto(vistaPrincipal, producto).ifPresent(datos -> {
+        DialogosInventario.mostrarEditarProducto(vistaPrincipal, producto,
+                modelo.getProveedoresActivos()).ifPresent(datos -> {
             try {
                 producto.setNombre(datos.nombre());
-                producto.setPrecio(datos.precio());
+                producto.setPrecioCompra(datos.precioCompra());
+                producto.setPrecioVenta(datos.precioVenta());
                 producto.setStockMinimo(datos.stockMinimo());
+                producto.setIdProveedor(datos.idProveedor());
                 aplicarImagenProducto(producto, datos);
                 modelo.actualizarProducto(producto);
                 refrescarInventario();
@@ -287,10 +312,12 @@ public class ControladorPrincipal {
     }
 
     private void mostrarDialogoNuevoProducto() {
-        DialogosInventario.mostrarNuevoProducto(vistaPrincipal).ifPresent(datos -> {
+        DialogosInventario.mostrarNuevoProducto(vistaPrincipal,
+                modelo.getProveedoresActivos()).ifPresent(datos -> {
             try {
                 com.abarrotespro.modelo.Producto nuevo = modelo.crearProducto(
-                        datos.nombre(), datos.precio(), datos.stockInicial(), datos.stockMinimo(), null);
+                        datos.nombre(), datos.precioCompra(), datos.precioVenta(),
+                        datos.stockInicial(), datos.stockMinimo(), datos.idProveedor(), null);
                 aplicarImagenProducto(nuevo, datos);
                 modelo.actualizarProducto(nuevo);
                 refrescarInventario();
@@ -316,11 +343,67 @@ public class ControladorPrincipal {
         }
     }
 
+    private void mostrarRegistroMercancia() {
+        DialogosInventario.mostrarRegistroMercancia(vistaPrincipal, modelo.getProductos(),
+                modelo.getHistorialSurtidos())
+                .ifPresent(entradas -> {
+                    int actualizados = modelo.registrarEntradaMercanciaMasiva(entradas);
+                    if (actualizados > 0) {
+                        refrescarInventario();
+                        refrescarCatalogo();
+                        int unidades = entradas.stream().mapToInt(EntradaMercancia::cantidad).sum();
+                        JOptionPane.showMessageDialog(vistaPrincipal,
+                                "Entrada registrada: " + actualizados + " producto(s), "
+                                        + unidades + " unidad(es) agregadas.",
+                                "Operacion exitosa",
+                                JOptionPane.INFORMATION_MESSAGE);
+                    }
+                });
+    }
+
+    private void mostrarReporteBajoStock() {
+        List<com.abarrotespro.modelo.Producto> bajoStock = modelo.obtenerProductosBajoStock();
+        if (bajoStock.isEmpty()) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "No hay productos en bajo stock. Todos cumplen el minimo configurado.",
+                    "Sin alertas",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        Object[] opciones = {"Ver reporte", "Exportar CSV", "Cancelar"};
+        int opcion = JOptionPane.showOptionDialog(vistaPrincipal,
+                "Se encontraron " + bajoStock.size() + " producto(s) en bajo stock.",
+                "Reporte de bajo stock",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.WARNING_MESSAGE,
+                null,
+                opciones,
+                opciones[0]);
+
+        if (opcion == 0) {
+            ReporteBajoStockDialog.mostrar(vistaPrincipal, bajoStock);
+        } else if (opcion == 1) {
+            try {
+                var archivo = ExportadorInventario.exportarBajoStockCsv(bajoStock);
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Reporte exportado correctamente:\n" + archivo,
+                        "Exportacion exitosa",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "No se pudo exportar el reporte:\n" + ex.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void refrescarInventario() {
         vistaPrincipal.getPanelInventario().actualizarTabla(
                 modelo.getProductos(),
-                (id, cantidad) -> {
-                    modelo.surtirProducto(id, cantidad);
+                (id, datos) -> {
+                    modelo.surtirProducto(id, datos.cantidad(), datos.precioCompra());
                     refrescarInventario();
                     refrescarCatalogo();
                 },
@@ -436,7 +519,7 @@ public class ControladorPrincipal {
                 modelo.getTotalEnCaja(),
                 modelo.getVentasHoy(),
                 modelo.getPromedioTicket(),
-                modelo.getEntradasManuales());
+                modelo.getUtilidadHoy());
         panel.actualizarHistorial(modelo.getHistorialCortes());
     }
 
@@ -448,15 +531,74 @@ public class ControladorPrincipal {
             }
             String seleccion = panel.getListaArchivos().getSelectedValue();
             if (seleccion == null) {
-                panel.mostrarContenido("");
+                panel.mostrarContenido(null, "");
                 return;
             }
             try {
-                panel.mostrarContenido(LectorTickets.leerContenido(seleccion));
+                panel.mostrarContenido(seleccion, LectorTickets.leerContenido(seleccion));
             } catch (Exception ex) {
-                panel.mostrarContenido("No se pudo leer el archivo:\n" + ex.getMessage());
+                panel.mostrarContenido(seleccion, "No se pudo leer el archivo:\n" + ex.getMessage());
             }
         });
+
+        panel.getBotonReimprimir().addActionListener(e -> reimprimirTicketSeleccionado());
+        panel.getBotonDevolucion().addActionListener(e -> realizarDevolucionTicket());
+    }
+
+    private void reimprimirTicketSeleccionado() {
+        String archivo = vistaPrincipal.getPanelTickets().getArchivoSeleccionado();
+        if (archivo == null) {
+            return;
+        }
+        try {
+            String contenido = LectorTickets.leerContenido(archivo);
+            int ventaId = LectorTickets.extraerIdVenta(archivo);
+            Venta venta = modelo.buscarVentaPorId(ventaId);
+            if (venta != null && !LectorTickets.esCancelado(archivo)) {
+                Path nuevo = GeneradorTicket.generar(venta);
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Ticket reimpreso en:\n" + nuevo, "Reimpresion",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(vistaPrincipal,
+                        "Contenido del ticket:\n\n" + contenido, "Ticket (solo lectura)",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+            refrescarTickets();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "No se pudo reimprimir: " + ex.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void realizarDevolucionTicket() {
+        String archivo = vistaPrincipal.getPanelTickets().getArchivoSeleccionado();
+        if (archivo == null || LectorTickets.esCancelado(archivo)) {
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(vistaPrincipal,
+                "Se realizara la devolucion del ticket seleccionado.\n"
+                        + "Se restaurara el inventario y se ajustara el corte de caja.",
+                "Confirmar devolucion",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        String error = modelo.realizarDevolucion(archivo);
+        if (error != null) {
+            JOptionPane.showMessageDialog(vistaPrincipal, error, "Devolucion",
+                    JOptionPane.WARNING_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "Devolucion registrada correctamente.", "Operacion exitosa",
+                    JOptionPane.INFORMATION_MESSAGE);
+            refrescarTickets();
+            refrescarInventario();
+            refrescarCatalogo();
+            refrescarCorte();
+        }
     }
 
     private void refrescarTickets() {

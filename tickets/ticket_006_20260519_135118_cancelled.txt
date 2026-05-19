@@ -1,0 +1,26 @@
+*** TICKET ANULADO - DEVOLUCION ***
+
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              19/05/2026
+Hora:               13:51:18
+ID Transaccion:     6
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Leche Entera 1L           3    22.50      67.50
+Aceite Vegetal 1L         1    42.00      42.00
+----------------------------------------
+Cantidad total articulos:               4
+Subtotal:                          109.50
+IVA (16%):                          17.52
+----------------------------------------
+TOTAL FINAL:                       127.02
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================
