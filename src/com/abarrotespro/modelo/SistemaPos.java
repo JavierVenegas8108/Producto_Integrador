@@ -11,8 +11,12 @@ import java.util.stream.Collectors;
 
 import com.abarrotespro.controlador.CajaController;
 import com.abarrotespro.controlador.VentaController;
+import com.abarrotespro.controlador.VentasController;
+
+import config.Conexion;
 import com.abarrotespro.excepcion.DineroInsuficienteException;
 import com.abarrotespro.modelo.dao.PosPersistencia;
+import com.abarrotespro.modelo.dao.ProductosMigracion;
 import com.abarrotespro.modelo.EntradaMercancia;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
@@ -36,7 +40,9 @@ public class SistemaPos {
     private final Caja caja;
     private final Inventario inventario;
     private final VentaController ventaController;
+    private final VentasController ventasController;
     private final CajaController cajaController;
+    private boolean usarBaseDatos;
 
     private Usuario usuarioActivo;
     private Venta ventaActual;
@@ -57,7 +63,9 @@ public class SistemaPos {
         caja = new Caja();
         inventario = new Inventario(productos);
         ventaController = new VentaController(inventario, caja);
+        ventasController = new VentasController(inventario);
         cajaController = new CajaController(caja);
+        usarBaseDatos = Conexion.probarConexion();
         contadorVentas = 0;
         contadorProductos = 0;
         contadorCortes = 0;
@@ -65,9 +73,41 @@ public class SistemaPos {
         entradasManuales = 0;
         usuarios.add(new Usuario("admin", "admin123", "Administrador", "AD"));
         inicializarDatos();
+        ejecutarMigracionProductosSiCorresponde();
         if (!caja.isAbierta()) {
             caja.abrirCaja(500.00);
         }
+    }
+
+    /**
+     * Al iniciar: si MySQL esta disponible y la tabla productos esta vacia,
+     * inserta el catalogo leido de src/img. Luego sincroniza ids con la BD.
+     */
+    private void ejecutarMigracionProductosSiCorresponde() {
+        if (!usarBaseDatos) {
+            return;
+        }
+        try {
+            int insertados = ProductosMigracion.migrarSiVacio(productos);
+            if (insertados > 0) {
+                System.out.println("[MySQL] Migracion completada: " + insertados + " productos insertados.");
+            }
+            sincronizarCatalogoDesdeBaseDatos();
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /** Reemplaza el catalogo en memoria con los ids reales de MySQL (evita fallos al vender). */
+    private void sincronizarCatalogoDesdeBaseDatos() throws java.sql.SQLException {
+        List<Producto> desdeDb = ProductosMigracion.cargarDesdeBaseDatos();
+        if (desdeDb.isEmpty()) {
+            return;
+        }
+        productos.clear();
+        productos.addAll(desdeDb);
+        contadorProductos = productos.stream().mapToInt(Producto::getId).max().orElse(0);
+        System.out.println("[MySQL] Catalogo sincronizado: " + productos.size() + " productos.");
     }
 
     public void cargarHistorialSurtidos(List<RegistroSurtido> registros) {
@@ -234,6 +274,15 @@ public class SistemaPos {
         return ventaController;
     }
 
+    /** Controlador con persistencia MySQL (cobro, surtido, ticket). */
+    public VentasController getVentasController() {
+        return ventasController;
+    }
+
+    public boolean isUsarBaseDatos() {
+        return usarBaseDatos;
+    }
+
     public CajaController getCajaController() {
         return cajaController;
     }
@@ -364,7 +413,20 @@ public class SistemaPos {
         if (ventaActual == null || ventaActual.estaVacia()) {
             return null;
         }
-        ventaController.procesarPago(ventaActual, metodoPago);
+        if (usarBaseDatos) {
+            try {
+                sincronizarEfectivoConVentasController();
+                ventasController.confirmarCobro(ventaActual, metodoPago);
+                caja.registrarIngreso(ventaActual.getTotal(), metodoPago,
+                        "Venta #" + ventaActual.getId());
+                ventasController.imprimirTicketUltimaVenta();
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+                ventaController.procesarPago(ventaActual, metodoPago);
+            }
+        } else {
+            ventaController.procesarPago(ventaActual, metodoPago);
+        }
         ventaActual.setFechaHora(java.time.LocalDateTime.now());
         Venta ventaCerrada = ventaActual;
         ventasDelDia.add(ventaCerrada);
@@ -372,6 +434,11 @@ public class SistemaPos {
         persistir();
         System.out.println("Venta cobrada: $" + String.format("%.2f", ventaCerrada.getMontoCobrable()));
         return ventaCerrada;
+    }
+
+    private void sincronizarEfectivoConVentasController() {
+        ventasController.reiniciarAcumuladorEfectivo();
+        ventasController.establecerMontoEfectivo(ventaController.getMontoAcumuladoEfectivo());
     }
 
     public void registrarPagoProveedor(String nombreProveedor, double monto, MetodoPago metodoPago) {
@@ -384,11 +451,32 @@ public class SistemaPos {
     }
 
     public void surtirProducto(int id, int cantidad, double precioCompra) {
+        surtirProducto(id, cantidad, precioCompra, false);
+    }
+
+    /**
+     * @param pagarConCajaEfectivo si true, registra egreso en movimientos_caja y cajas.egresos
+     */
+    public void surtirProducto(int id, int cantidad, double precioCompra, boolean pagarConCajaEfectivo) {
         Producto p = buscarProductoPorId(id);
         if (p == null || cantidad <= 0) {
             return;
         }
-        p.aumentarStock(cantidad);
+        double costoTotal = precioCompra >= 0 ? precioCompra * cantidad : 0;
+        if (usarBaseDatos) {
+            try {
+                ventasController.ejecutarSurtido(id, cantidad, costoTotal, pagarConCajaEfectivo);
+                if (pagarConCajaEfectivo && costoTotal > 0) {
+                    caja.registrarEgreso(costoTotal, MetodoPago.EFECTIVO,
+                            "Surtido producto #" + id);
+                }
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+                p.aumentarStock(cantidad);
+            }
+        } else {
+            p.aumentarStock(cantidad);
+        }
         if (precioCompra >= 0) {
             p.setPrecioCompra(precioCompra);
         }

@@ -1,0 +1,26 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               14:47:37
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceite spray             20    44.51     890.20
+----------------------------------------
+Cantidad total articulos:              20
+Subtotal:                          890.20
+IVA (16%):                         142.43
+----------------------------------------
+TOTAL FINAL:                      1032.63
+Metodo de Pago:                  Efectivo
+Pago con:                    $    1050.00
+Su cambio:                   $      17.37
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

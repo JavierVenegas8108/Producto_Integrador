@@ -1,0 +1,28 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               12:38:06
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceite spray              5    44.51     222.55
+Aceite Ybarra             6    47.11     282.66
+Aceitunas Pimiento        7    26.31     184.17
+----------------------------------------
+Cantidad total articulos:              18
+Subtotal:                          689.38
+IVA (16%):                         110.30
+----------------------------------------
+TOTAL FINAL:                       799.68
+Metodo de Pago:                  Efectivo
+Pago con:                    $     900.00
+Su cambio:                   $     100.32
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

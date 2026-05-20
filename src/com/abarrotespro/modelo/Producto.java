@@ -6,9 +6,13 @@ package com.abarrotespro.modelo;
 public class Producto {
 
     private int id;
+    /** Columna MySQL: codigo_barras */
+    private String codigoBarras;
     private String nombre;
     private double precioCompra;
+    /** Columna MySQL: precio_venta */
     private double precioVenta;
+    /** Columna MySQL: stock_actual */
     private int stock;
     private String categoria;
     private String emoji;
@@ -43,6 +47,20 @@ public class Producto {
         this.emoji = emoji;
     }
 
+    /** POJO alineado con la tabla productos de MySQL. */
+    public Producto(int id, String codigoBarras, String nombre, double precioVenta,
+            int stockActual, int stockMinimo) {
+        this.id = id;
+        this.codigoBarras = codigoBarras;
+        this.nombre = nombre;
+        this.precioCompra = precioVenta;
+        this.precioVenta = precioVenta;
+        this.stock = stockActual;
+        this.stockMinimo = stockMinimo;
+        this.categoria = "General";
+        this.emoji = "📦";
+    }
+
     /** Compatibilidad: precio de venta al publico. */
     public double getPrecio() {
         return precioVenta;
@@ -58,6 +76,14 @@ public class Producto {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getCodigoBarras() {
+        return codigoBarras;
+    }
+
+    public void setCodigoBarras(String codigoBarras) {
+        this.codigoBarras = codigoBarras;
     }
 
     public String getNombre() {

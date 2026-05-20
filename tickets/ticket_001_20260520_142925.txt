@@ -1,0 +1,27 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               14:29:25
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceitunas                20    56.54    1130.80
+Aceite spray              9    44.51     400.59
+----------------------------------------
+Cantidad total articulos:              29
+Subtotal:                         1531.39
+IVA (16%):                         245.02
+----------------------------------------
+TOTAL FINAL:                      1776.41
+Metodo de Pago:                  Efectivo
+Pago con:                    $    1870.00
+Su cambio:                   $      93.59
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

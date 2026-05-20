@@ -1,0 +1,29 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               13:54:11
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceite spray              5    44.51     222.55
+Aceitunas Pimiento        4    26.31     105.24
+Aceitunas Manzanilla      8    20.08     160.64
+Aceite Galon             21    54.12    1136.52
+----------------------------------------
+Cantidad total articulos:              38
+Subtotal:                         1624.95
+IVA (16%):                         259.99
+----------------------------------------
+TOTAL FINAL:                      1884.94
+Metodo de Pago:                  Efectivo
+Pago con:                    $    1900.00
+Su cambio:                   $      15.06
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================
