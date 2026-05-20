@@ -78,7 +78,7 @@ public class VentaController {
             throw new IllegalStateException("No hay productos en la venta");
         }
 
-        double total = venta.getMontoCobrable();
+        double total = venta.getTotal();
         double cambio = 0;
 
         if (metodoPago == MetodoPago.EFECTIVO) {

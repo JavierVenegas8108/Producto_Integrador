@@ -39,7 +39,7 @@ public final class DialogoCobro extends JDialog {
     private DialogoCobro(Window padre, Venta venta, VentaController ventaController) {
         super(padre, "Cobrar venta", ModalityType.APPLICATION_MODAL);
         this.ventaController = ventaController;
-        this.totalCobrar = venta.getMontoCobrable();
+        this.totalCobrar = venta.getTotal();
         this.metodoSeleccionado = MetodoPago.EFECTIVO;
         this.confirmado = false;
         ventaController.reiniciarAcumuladorEfectivo();

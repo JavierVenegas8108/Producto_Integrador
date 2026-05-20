@@ -40,8 +40,7 @@ public class TarjetaProducto extends JPanel {
         tarjeta.setBorder(new EmptyBorder(14, 14, 14, 14));
 
         JLabel emoji = new JLabel("", SwingConstants.CENTER);
-        ImageIcon iconoProducto = GestorImagenProducto.cargarMiniaturaOEmoji(
-                producto.getRutaImagen(), producto.getEmoji(), 64, 64);
+        ImageIcon iconoProducto = GestorImagenProducto.cargarMiniaturaProducto(producto, 64, 64);
         if (iconoProducto != null) {
             emoji.setIcon(iconoProducto);
         } else {

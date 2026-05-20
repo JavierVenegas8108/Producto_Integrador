@@ -38,6 +38,21 @@ public class PosPersistencia {
         return Files.isRegularFile(directorioDatos.resolve("productos.tsv"));
     }
 
+    public void limpiarDatosPersistidos() {
+        try {
+            Files.createDirectories(directorioDatos);
+            String[] archivos = {
+                    "productos.tsv", "proveedores.tsv", "ventas.tsv", "lineas_venta.tsv",
+                    "cortes.tsv", "surtidos.tsv", "estado.properties"
+            };
+            for (String nombre : archivos) {
+                Files.deleteIfExists(directorioDatos.resolve(nombre));
+            }
+        } catch (IOException e) {
+            System.err.println("Error al limpiar datos persistidos: " + e.getMessage());
+        }
+    }
+
     public void guardar(SistemaPos sistema) {
         try {
             Files.createDirectories(directorioDatos);

@@ -23,10 +23,26 @@ public class EstadoPersistido {
     private final int contadorProductos;
     private final int contadorCortes;
     private final int contadorProveedores;
+    private final double fondoInicial;
+    private final double ingresosEfectivo;
+    private final double ingresosTarjeta;
+    private final double ingresosTransferencia;
+    private final double egresosEfectivo;
+    private final boolean cajaAbierta;
 
     public EstadoPersistido(List<Producto> productos, List<Venta> ventas, List<Corte> cortes,
             List<Proveedor> proveedores, double totalEnCaja, double entradasManuales,
             int contadorVentas, int contadorProductos, int contadorCortes, int contadorProveedores) {
+        this(productos, ventas, cortes, proveedores, totalEnCaja, entradasManuales,
+                contadorVentas, contadorProductos, contadorCortes, contadorProveedores,
+                totalEnCaja, 0, 0, 0, 0, true);
+    }
+
+    public EstadoPersistido(List<Producto> productos, List<Venta> ventas, List<Corte> cortes,
+            List<Proveedor> proveedores, double totalEnCaja, double entradasManuales,
+            int contadorVentas, int contadorProductos, int contadorCortes, int contadorProveedores,
+            double fondoInicial, double ingresosEfectivo, double ingresosTarjeta,
+            double ingresosTransferencia, double egresosEfectivo, boolean cajaAbierta) {
         this.productos = new ArrayList<>(productos);
         this.ventas = new ArrayList<>(ventas);
         this.cortes = new ArrayList<>(cortes);
@@ -37,6 +53,12 @@ public class EstadoPersistido {
         this.contadorProductos = contadorProductos;
         this.contadorCortes = contadorCortes;
         this.contadorProveedores = contadorProveedores;
+        this.fondoInicial = fondoInicial;
+        this.ingresosEfectivo = ingresosEfectivo;
+        this.ingresosTarjeta = ingresosTarjeta;
+        this.ingresosTransferencia = ingresosTransferencia;
+        this.egresosEfectivo = egresosEfectivo;
+        this.cajaAbierta = cajaAbierta;
     }
 
     public List<Producto> getProductos() {
@@ -77,5 +99,29 @@ public class EstadoPersistido {
 
     public int getContadorProveedores() {
         return contadorProveedores;
+    }
+
+    public double getFondoInicial() {
+        return fondoInicial;
+    }
+
+    public double getIngresosEfectivo() {
+        return ingresosEfectivo;
+    }
+
+    public double getIngresosTarjeta() {
+        return ingresosTarjeta;
+    }
+
+    public double getIngresosTransferencia() {
+        return ingresosTransferencia;
+    }
+
+    public double getEgresosEfectivo() {
+        return egresosEfectivo;
+    }
+
+    public boolean isCajaAbierta() {
+        return cajaAbierta;
     }
 }

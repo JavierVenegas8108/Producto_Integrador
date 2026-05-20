@@ -6,6 +6,7 @@ import java.awt.Container;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JList;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
@@ -76,6 +77,11 @@ public final class TemaUi {
                 header.setBackground(Colores.GRIS_SIDEBAR);
                 header.setForeground(Colores.NEGRO_TEXTO);
             }
+        } else if (comp instanceof JList<?> lista) {
+            lista.setBackground(Colores.BLANCO);
+            lista.setForeground(Colores.NEGRO_TEXTO);
+            lista.setSelectionBackground(Colores.SIDEBAR_ACTIVO);
+            lista.setSelectionForeground(Colores.NEGRO_TEXTO);
         } else if (comp instanceof JButton btn && btn.isContentAreaFilled()
                 && !"nav".equals(btn.getClientProperty(PROP_FONDO))) {
             btn.setBackground(Colores.GRIS_SIDEBAR);

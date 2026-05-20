@@ -390,8 +390,13 @@ public class ControladorPrincipal {
         if (datos.archivoImagenNuevo() != null) {
             String ruta = GestorImagenProducto.guardarImagen(datos.archivoImagenNuevo(), producto.getId());
             producto.setRutaImagen(ruta);
+            producto.setNombre(GestorImagenProducto.nombreVisibleDesdeArchivo(datos.archivoImagenNuevo().getName()));
         } else if (datos.rutaImagen() != null && !datos.rutaImagen().isBlank()) {
             producto.setRutaImagen(datos.rutaImagen());
+            String nombreDerivado = GestorImagenProducto.nombreVisibleDesdeArchivo(datos.rutaImagen());
+            if (!nombreDerivado.isBlank()) {
+                producto.setNombre(nombreDerivado);
+            }
         }
     }
 

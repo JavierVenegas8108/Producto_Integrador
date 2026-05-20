@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.abarrotespro.controlador.CajaController;
@@ -16,11 +18,13 @@ import com.abarrotespro.modelo.dto.EstadoPersistido;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
 import com.abarrotespro.modelo.servicio.LectorTickets;
 import com.abarrotespro.modelo.servicio.ReporteVentasServicio;
+import com.abarrotespro.vista.util.GestorImagenProducto;
 
 /**
  * Modelo central del punto de venta: inventario, ventas, caja y usuarios.
  */
 public class SistemaPos {
+    private static final Pattern NUMERO_EN_NOMBRE = Pattern.compile("(\\d+)");
 
     private final List<Usuario> usuarios;
     private final List<Producto> productos;
@@ -60,18 +64,7 @@ public class SistemaPos {
         contadorProveedores = 0;
         entradasManuales = 0;
         usuarios.add(new Usuario("admin", "admin123", "Administrador", "AD"));
-        if (persistencia.existenDatos()) {
-            try {
-                persistencia.cargar(this);
-            } catch (Exception e) {
-                System.err.println("No se pudieron cargar datos guardados: " + e.getMessage());
-                inicializarDatos();
-                persistir();
-            }
-        } else {
-            inicializarDatos();
-            persistir();
-        }
+        inicializarDatos();
         if (!caja.isAbierta()) {
             caja.abrirCaja(500.00);
         }
@@ -128,18 +121,8 @@ public class SistemaPos {
     }
 
     private void inicializarDatos() {
-        agregarProducto("Leche Entera 1L", 22.50, 45, "Lacteos", "🥛");
-        agregarProducto("Pan Blanco Bolsa", 38.00, 20, "Panaderia", "🍞");
-        agregarProducto("Arroz 1kg", 28.90, 60, "Abarrotes", "🍚");
-        agregarProducto("Aceite Vegetal 1L", 42.00, 30, "Abarrotes", "🫒");
-        agregarProducto("Coca-Cola 600ml", 18.50, 80, "Bebidas", "🥤");
-        agregarProducto("Sabritas Original", 19.00, 55, "Snacks", "🥔");
-        agregarProducto("Huevo Carton 12pz", 52.00, 25, "Lacteos", "🥚");
-        agregarProducto("Jabon de Barra", 15.00, 40, "Limpieza", "🧼");
-        agregarProducto("Papel Higienico 4 rollos", 35.00, 18, "Limpieza", "🧻");
-        agregarProducto("Atun en Lata", 24.50, 35, "Abarrotes", "🐟");
-        agregarProducto("Manzana Roja kg", 45.00, 50, "Frutas", "🍎");
-        agregarProducto("Agua Natural 1.5L", 12.00, 100, "Bebidas", "💧");
+        persistencia.limpiarDatosPersistidos();
+        reinicializarCatalogoDesdeImagenes();
 
         historialCortes.add(new Corte(980.00, "Administrador"));
         historialCortes.add(new Corte(1120.75, "Administrador"));
@@ -148,6 +131,7 @@ public class SistemaPos {
                 "contacto@lacentral.com", "Av. Reforma 120", "Lunes, Miercoles", true);
         agregarProveedor("Abarrotes del Norte", "Maria Lopez", "555-2045",
                 "ventas@norte.com", "Calle 5 de Mayo 45", "Martes, Jueves", true);
+        persistir();
     }
 
     private void agregarProveedor(String razon, String contacto, String telefono,
@@ -157,9 +141,49 @@ public class SistemaPos {
                 correo, direccion, dias, activo));
     }
 
-    private void agregarProducto(String nombre, double precio, int stock, String categoria, String emoji) {
+    private void reinicializarCatalogoDesdeImagenes() {
+        productos.clear();
+        contadorProductos = 0;
+        List<String> imagenes = GestorImagenProducto.listarArchivosImagenProyecto();
+        if (imagenes.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < imagenes.size(); i++) {
+            String archivo = imagenes.get(i);
+            agregarProductoDesdeImagen(archivo, i);
+        }
+    }
+
+    private void agregarProductoDesdeImagen(String nombreArchivo, int indice) {
+        String nombre = GestorImagenProducto.nombreVisibleDesdeArchivo(nombreArchivo);
+        double precio = calcularPrecioInicial(nombreArchivo, indice);
+        int stock = calcularStockInicial(nombreArchivo, indice);
+        String ruta = GestorImagenProducto.rutaImagenProyecto(nombreArchivo);
         contadorProductos++;
-        productos.add(new Producto(contadorProductos, nombre, precio, stock, categoria, emoji));
+        productos.add(new Producto(contadorProductos, nombre, precio, precio,
+                stock, "General", "📦", 0, 0, ruta));
+    }
+
+    private double calcularPrecioInicial(String nombreArchivo, int indice) {
+        Matcher matcher = NUMERO_EN_NOMBRE.matcher(nombreArchivo);
+        if (matcher.find()) {
+            try {
+                int valor = Integer.parseInt(matcher.group(1));
+                double sugerido = Math.max(15.0, Math.min(60.0, valor / 2.0));
+                return redondearMoneda(sugerido);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        int factor = Math.floorMod(nombreArchivo.toLowerCase().hashCode() + (indice * 31), 4501);
+        return redondearMoneda(15.0 + (factor / 100.0));
+    }
+
+    private int calcularStockInicial(String nombreArchivo, int indice) {
+        return 10 + Math.floorMod(nombreArchivo.toLowerCase().hashCode() + (indice * 17), 91);
+    }
+
+    private double redondearMoneda(double valor) {
+        return Math.round(valor * 100.0) / 100.0;
     }
 
     public List<Usuario> getUsuarios() {

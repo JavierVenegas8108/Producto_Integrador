@@ -128,10 +128,11 @@ public class PanelInventario extends JPanel {
 
         JTableHeader header = tabla.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setForeground(Colores.GRIS_TEXTO);
-        header.setBackground(Color.WHITE);
+        header.setForeground(Colores.NEGRO_TEXTO);
+        header.setBackground(Colores.GRIS_SIDEBAR);
         header.setPreferredSize(new Dimension(header.getWidth(), 42));
         header.setReorderingAllowed(false);
+        header.setDefaultRenderer(new HeaderRenderer());
 
         TableColumnModel columnasTabla = tabla.getColumnModel();
         columnasTabla.getColumn(COL_ID).setPreferredWidth(72);
@@ -243,8 +244,7 @@ public class PanelInventario extends JPanel {
         for (Producto p : productos) {
             modeloTabla.addRow(new Object[]{
                     p.getId(),
-                    GestorImagenProducto.cargarMiniaturaOEmoji(
-                            p.getRutaImagen(), p.getEmoji(), 44, 44),
+                    GestorImagenProducto.cargarMiniaturaProducto(p, 44, 44),
                     p.getNombre(),
                     ComponentesUi.formatearMoneda(p.getPrecioVenta()),
                     p.getStock(),
@@ -369,6 +369,21 @@ public class PanelInventario extends JPanel {
                     table, value, isSelected, hasFocus, row, column);
             lbl.setForeground(Colores.GRIS_TEXTO);
             lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            return lbl;
+        }
+    }
+
+    private static class HeaderRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            lbl.setBackground(Colores.GRIS_SIDEBAR);
+            lbl.setForeground(Colores.NEGRO_TEXTO);
+            lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+            lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Colores.GRIS_BORDE));
             return lbl;
         }
     }
