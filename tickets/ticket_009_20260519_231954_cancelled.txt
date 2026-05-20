@@ -1,0 +1,25 @@
+*** TICKET ANULADO - DEVOLUCION ***
+
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              19/05/2026
+Hora:               23:19:54
+ID Transaccion:     9
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Coca-Cola 600ml           4    18.50      74.00
+----------------------------------------
+Cantidad total articulos:               4
+Subtotal:                           74.00
+IVA (16%):                          11.84
+----------------------------------------
+TOTAL FINAL:                        85.84
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

@@ -38,6 +38,21 @@ public class PosPersistencia {
         return Files.isRegularFile(directorioDatos.resolve("productos.tsv"));
     }
 
+    public void limpiarDatosPersistidos() {
+        try {
+            Files.createDirectories(directorioDatos);
+            String[] archivos = {
+                    "productos.tsv", "proveedores.tsv", "ventas.tsv", "lineas_venta.tsv",
+                    "cortes.tsv", "surtidos.tsv", "estado.properties"
+            };
+            for (String nombre : archivos) {
+                Files.deleteIfExists(directorioDatos.resolve(nombre));
+            }
+        } catch (IOException e) {
+            System.err.println("Error al limpiar datos persistidos: " + e.getMessage());
+        }
+    }
+
     public void guardar(SistemaPos sistema) {
         try {
             Files.createDirectories(directorioDatos);
@@ -70,10 +85,18 @@ public class PosPersistencia {
         int contProd = Integer.parseInt(props.getProperty("contadorProductos", "0"));
         int contCortes = Integer.parseInt(props.getProperty("contadorCortes", "0"));
         int contProv = Integer.parseInt(props.getProperty("contadorProveedores", "0"));
+        double fondoInicial = Double.parseDouble(props.getProperty("fondoInicial", String.valueOf(totalCaja)));
+        double ingresosEfectivo = Double.parseDouble(props.getProperty("ingresosEfectivo", "0"));
+        double ingresosTarjeta = Double.parseDouble(props.getProperty("ingresosTarjeta", "0"));
+        double ingresosTransferencia = Double.parseDouble(props.getProperty("ingresosTransferencia", "0"));
+        double egresosEfectivo = Double.parseDouble(props.getProperty("egresosEfectivo", "0"));
+        boolean cajaAbierta = Boolean.parseBoolean(props.getProperty("cajaAbierta", "true"));
 
         EstadoPersistido estado = new EstadoPersistido(
                 productos, ventas, cortes, proveedores, totalCaja, entradas,
-                contVentas, contProd, contCortes, contProv);
+                contVentas, contProd, contCortes, contProv,
+                fondoInicial, ingresosEfectivo, ingresosTarjeta, ingresosTransferencia,
+                egresosEfectivo, cajaAbierta);
         sistema.cargarEstado(estado);
         sistema.cargarHistorialSurtidos(cargarHistorialSurtidos());
     }
@@ -86,6 +109,12 @@ public class PosPersistencia {
         props.setProperty("contadorProductos", String.valueOf(estado.getContadorProductos()));
         props.setProperty("contadorCortes", String.valueOf(estado.getContadorCortes()));
         props.setProperty("contadorProveedores", String.valueOf(estado.getContadorProveedores()));
+        props.setProperty("fondoInicial", String.valueOf(estado.getFondoInicial()));
+        props.setProperty("ingresosEfectivo", String.valueOf(estado.getIngresosEfectivo()));
+        props.setProperty("ingresosTarjeta", String.valueOf(estado.getIngresosTarjeta()));
+        props.setProperty("ingresosTransferencia", String.valueOf(estado.getIngresosTransferencia()));
+        props.setProperty("egresosEfectivo", String.valueOf(estado.getEgresosEfectivo()));
+        props.setProperty("cajaAbierta", String.valueOf(estado.isCajaAbierta()));
         Path archivo = directorioDatos.resolve("estado.properties");
         try (var out = Files.newOutputStream(archivo)) {
             props.store(out, "Estado del punto de venta Abarrotes Pro");

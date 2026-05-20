@@ -88,6 +88,15 @@ public class Producto {
         return stock;
     }
 
+    /** Alias de dominio: existencia actual en almacen. */
+    public int getStockActual() {
+        return stock;
+    }
+
+    public void setStockActual(int stockActual) {
+        this.stock = stockActual;
+    }
+
     public void setStock(int stock) {
         this.stock = stock;
     }
@@ -112,8 +121,22 @@ public class Producto {
         return stockMinimo;
     }
 
+    /** Alias de dominio: punto de reorden / inventario minimo. */
+    public int getInventarioMinimo() {
+        return stockMinimo;
+    }
+
+    public void setInventarioMinimo(int inventarioMinimo) {
+        this.stockMinimo = inventarioMinimo;
+    }
+
     public void setStockMinimo(int stockMinimo) {
         this.stockMinimo = stockMinimo;
+    }
+
+    /** Identificador visual con ceros (ej. 00001). */
+    public String getIdFormateado() {
+        return String.format("%05d", id);
     }
 
     public String getRutaImagen() {

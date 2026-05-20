@@ -23,6 +23,8 @@ public class PanelVenta extends JPanel {
 
     private JPanel contenedorProductos;
     private JPanel contenedorTicket;
+    private JLabel etiquetaSubtotal;
+    private JLabel etiquetaIva;
     private JLabel etiquetaTotal;
     private JButton botonCobrar;
     private JTextField campoBusqueda;
@@ -91,16 +93,38 @@ public class PanelVenta extends JPanel {
         pie.setOpaque(false);
         pie.setBorder(new EmptyBorder(12, 0, 0, 0));
 
-        JPanel totalRow = new JPanel(new BorderLayout());
-        totalRow.setOpaque(false);
+        JPanel resumen = new JPanel(new GridLayout(3, 2, 0, 6));
+        resumen.setOpaque(false);
+
+        JLabel lblSubtotal = new JLabel("Subtotal:");
+        lblSubtotal.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        etiquetaSubtotal = new JLabel("$0.00");
+        etiquetaSubtotal.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        etiquetaSubtotal.setHorizontalAlignment(SwingConstants.RIGHT);
+
+        JLabel lblIva = new JLabel("IVA (16%):");
+        lblIva.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        etiquetaIva = new JLabel("$0.00");
+        etiquetaIva.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        etiquetaIva.setHorizontalAlignment(SwingConstants.RIGHT);
+
         JLabel lblTotal = new JLabel("Total:");
         lblTotal.setFont(new Font("Segoe UI", Font.BOLD, 16));
         etiquetaTotal = new JLabel("$0.00");
         etiquetaTotal.setFont(new Font("Segoe UI", Font.BOLD, 22));
         etiquetaTotal.setForeground(Colores.AZUL_PRIMARIO);
         etiquetaTotal.setHorizontalAlignment(SwingConstants.RIGHT);
-        totalRow.add(lblTotal, BorderLayout.WEST);
-        totalRow.add(etiquetaTotal, BorderLayout.EAST);
+
+        resumen.add(lblSubtotal);
+        resumen.add(etiquetaSubtotal);
+        resumen.add(lblIva);
+        resumen.add(etiquetaIva);
+        resumen.add(lblTotal);
+        resumen.add(etiquetaTotal);
+
+        JPanel totalRow = new JPanel(new BorderLayout());
+        totalRow.setOpaque(false);
+        totalRow.add(resumen, BorderLayout.CENTER);
 
         botonCobrar = ComponentesUi.crearBotonPrimario("Cobrar Venta", 44);
 
@@ -144,6 +168,8 @@ public class PanelVenta extends JPanel {
             vacio.setBorder(new EmptyBorder(20, 0, 0, 0));
             contenedorTicket.add(vacio);
         }
+        etiquetaSubtotal.setText(ComponentesUi.formatearMoneda(venta.getSubtotal()));
+        etiquetaIva.setText(ComponentesUi.formatearMoneda(venta.getMontoIva()));
         etiquetaTotal.setText(ComponentesUi.formatearMoneda(venta.getTotal()));
         contenedorTicket.revalidate();
         contenedorTicket.repaint();

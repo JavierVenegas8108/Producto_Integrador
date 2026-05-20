@@ -38,6 +38,8 @@ public class PanelTickets extends JPanel {
                 JLabel lbl = (JLabel) super.getListCellRendererComponent(
                         list, value, index, isSelected, cellHasFocus);
                 String texto = String.valueOf(value);
+                lbl.setOpaque(true);
+                lbl.setBackground(isSelected ? Colores.SIDEBAR_ACTIVO : Colores.BLANCO);
                 if (LectorTickets.esCancelado(texto)) {
                     lbl.setForeground(Colores.ROJO);
                     lbl.setText("<html><strike>" + texto + "</strike></html>");
@@ -53,6 +55,9 @@ public class PanelTickets extends JPanel {
         listaArchivos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listaArchivos.setFixedCellHeight(32);
         listaArchivos.setBackground(Colores.BLANCO);
+        listaArchivos.setForeground(Colores.NEGRO_TEXTO);
+        listaArchivos.setSelectionBackground(Colores.SIDEBAR_ACTIVO);
+        listaArchivos.setSelectionForeground(Colores.NEGRO_TEXTO);
 
         JScrollPane scrollLista = new JScrollPane(listaArchivos);
         scrollLista.setBorder(BorderFactory.createLineBorder(Colores.GRIS_BORDE, 1, true));

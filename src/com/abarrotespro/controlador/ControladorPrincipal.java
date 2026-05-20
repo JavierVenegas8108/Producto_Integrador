@@ -16,8 +16,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import com.abarrotespro.excepcion.DineroInsuficienteException;
 import com.abarrotespro.modelo.SistemaPos;
 import com.abarrotespro.modelo.Venta;
+import com.abarrotespro.vista.dialog.DialogoCobro;
 import com.abarrotespro.modelo.dto.FilaReporteVenta;
 import com.abarrotespro.modelo.EntradaMercancia;
 import com.abarrotespro.modelo.servicio.ExportadorInventario;
@@ -109,8 +111,34 @@ public class ControladorPrincipal {
         refrescarVenta();
         refrescarInventario();
         refrescarCorte();
+        solicitarAperturaCajaSiNecesario();
 
         vistaPrincipal.setVisible(true);
+    }
+
+    private void solicitarAperturaCajaSiNecesario() {
+        if (modelo.isCajaAbierta()) {
+            return;
+        }
+        String fondo = JOptionPane.showInputDialog(vistaPrincipal,
+                "La caja esta cerrada. Ingrese el fondo inicial en efectivo:",
+                "Apertura de caja",
+                JOptionPane.QUESTION_MESSAGE);
+        if (fondo == null || fondo.isBlank()) {
+            modelo.abrirCaja(0);
+            return;
+        }
+        try {
+            double monto = Double.parseDouble(fondo.trim());
+            modelo.abrirCaja(monto);
+            refrescarCorte();
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(vistaPrincipal,
+                    "Monto invalido. Se abrio la caja con $0.00",
+                    "Aviso", JOptionPane.WARNING_MESSAGE);
+            modelo.abrirCaja(0);
+            refrescarCorte();
+        }
     }
 
     private void configurarNavegacion() {
@@ -189,16 +217,37 @@ public class ControladorPrincipal {
     }
 
     private void cobrarVenta() {
-        Venta ventaCerrada = modelo.cobrarVenta();
-        if (ventaCerrada == null) {
+        Venta ventaActual = modelo.getVentaActual();
+        if (ventaActual == null || ventaActual.estaVacia()) {
             JOptionPane.showMessageDialog(vistaPrincipal, "El ticket esta vacio", "Ticket vacio",
                     JOptionPane.INFORMATION_MESSAGE);
-        } else {
+            return;
+        }
+        if (!modelo.isCajaAbierta()) {
+            solicitarAperturaCajaSiNecesario();
+        }
+        DialogoCobro.mostrar(vistaPrincipal, ventaActual, modelo.getVentaController())
+                .ifPresent(this::finalizarCobro);
+    }
+
+    private void finalizarCobro(DialogoCobro.ResultadoCobro resultado) {
+        com.abarrotespro.modelo.MetodoPago metodoPago = resultado.metodoPago();
+        try {
+            Venta ventaCerrada = modelo.cobrarVenta(metodoPago);
+            if (ventaCerrada == null) {
+                return;
+            }
+            String mensajeCambio = "";
+            if (metodoPago == com.abarrotespro.modelo.MetodoPago.EFECTIVO
+                    && ventaCerrada.getCambio() > 0) {
+                mensajeCambio = "\nCambio: $" + String.format("%.2f", ventaCerrada.getCambio());
+            }
             String contenidoTicket = GeneradorTicket.generarContenido(ventaCerrada);
             try {
                 var archivoTicket = GeneradorTicket.generar(ventaCerrada);
                 JOptionPane.showMessageDialog(vistaPrincipal,
-                        "Venta cobrada exitosamente.\nTicket guardado en:\n" + archivoTicket,
+                        "Venta cobrada exitosamente." + mensajeCambio
+                                + "\nTicket guardado en:\n" + archivoTicket,
                         "Operacion exitosa",
                         JOptionPane.INFORMATION_MESSAGE);
                 VistaPreviaTicketDialog.mostrar(vistaPrincipal, contenidoTicket);
@@ -228,6 +277,10 @@ public class ControladorPrincipal {
             refrescarVenta();
             refrescarCorte();
             refrescarTickets();
+            refrescarInventario();
+        } catch (DineroInsuficienteException ex) {
+            JOptionPane.showMessageDialog(vistaPrincipal, ex.getMessage(),
+                    "Dinero insuficiente", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -338,8 +391,13 @@ public class ControladorPrincipal {
         if (datos.archivoImagenNuevo() != null) {
             String ruta = GestorImagenProducto.guardarImagen(datos.archivoImagenNuevo(), producto.getId());
             producto.setRutaImagen(ruta);
+            producto.setNombre(GestorImagenProducto.nombreVisibleDesdeArchivo(datos.archivoImagenNuevo().getName()));
         } else if (datos.rutaImagen() != null && !datos.rutaImagen().isBlank()) {
             producto.setRutaImagen(datos.rutaImagen());
+            String nombreDerivado = GestorImagenProducto.nombreVisibleDesdeArchivo(datos.rutaImagen());
+            if (!nombreDerivado.isBlank()) {
+                producto.setNombre(nombreDerivado);
+            }
         }
     }
 
@@ -510,6 +568,7 @@ public class ControladorPrincipal {
             JOptionPane.showMessageDialog(vistaPrincipal,
                     "Corte de caja realizado", "Operacion exitosa",
                     JOptionPane.INFORMATION_MESSAGE);
+            solicitarAperturaCajaSiNecesario();
         }
     }
 
