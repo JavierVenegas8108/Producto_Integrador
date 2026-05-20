@@ -18,6 +18,10 @@ public class Venta {
     private String usuarioNombre;
     private boolean cerrada;
     private double descuento;
+    private EstadoVenta estado;
+    private MetodoPago metodoPago;
+    private double montoRecibido;
+    private double cambio;
 
     public Venta(int id, String usuarioNombre) {
         this.id = id;
@@ -25,6 +29,7 @@ public class Venta {
         this.lineas = new ArrayList<>();
         this.fechaHora = LocalDateTime.now();
         this.cerrada = false;
+        this.estado = EstadoVenta.PENDIENTE;
     }
 
     public int getId() {
@@ -116,5 +121,50 @@ public class Venta {
 
     public void limpiar() {
         lineas.clear();
+    }
+
+    public EstadoVenta getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoVenta estado) {
+        this.estado = estado;
+        if (estado == EstadoVenta.PAGADA) {
+            cerrada = true;
+        } else if (estado == EstadoVenta.CANCELADA) {
+            cerrada = true;
+        }
+    }
+
+    public MetodoPago getMetodoPago() {
+        return metodoPago;
+    }
+
+    public void setMetodoPago(MetodoPago metodoPago) {
+        this.metodoPago = metodoPago;
+    }
+
+    public double getMontoRecibido() {
+        return montoRecibido;
+    }
+
+    public void setMontoRecibido(double montoRecibido) {
+        this.montoRecibido = montoRecibido;
+    }
+
+    public double getCambio() {
+        return cambio;
+    }
+
+    public void setCambio(double cambio) {
+        this.cambio = cambio;
+    }
+
+    /**
+     * Monto a cobrar en caja (precios de mostrador sin IVA adicional).
+     * Coincide con la suma de lineas mostrada en inventario y tickets demo.
+     */
+    public double getMontoCobrable() {
+        return getSubtotal() - descuento;
     }
 }

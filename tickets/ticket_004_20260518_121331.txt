@@ -1,0 +1,28 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha: 18/05/2026
+Hora:  12:13:31
+Ticket #: 4
+Atendio: Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit    Importe
+----------------------------------------
+Huevo Carton 12pz         8    52.00     416.00
+Papel Higienico 4 rol.    2    35.00      70.00
+Jabon de Barra            5    15.00      75.00
+Aceite Vegetal 1L         1    42.00      42.00
+Coca-Cola 600ml           1    18.50      18.50
+Sabritas Original         2    19.00      38.00
+Leche Entera 1L           2     0.00       0.00
+Agua Natural 1.5L         3    12.00      36.00
+Manzana Roja kg           3    45.00     135.00
+Pan Blanco Bolsa          1    38.00      38.00
+----------------------------------------
+                            TOTAL: $868.50
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

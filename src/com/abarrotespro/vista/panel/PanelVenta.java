@@ -144,7 +144,7 @@ public class PanelVenta extends JPanel {
             vacio.setBorder(new EmptyBorder(20, 0, 0, 0));
             contenedorTicket.add(vacio);
         }
-        etiquetaTotal.setText(ComponentesUi.formatearMoneda(venta.getTotal()));
+        etiquetaTotal.setText(ComponentesUi.formatearMoneda(venta.getMontoCobrable()));
         contenedorTicket.revalidate();
         contenedorTicket.repaint();
     }

@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.abarrotespro.controlador.CajaController;
+import com.abarrotespro.controlador.VentaController;
+import com.abarrotespro.excepcion.DineroInsuficienteException;
 import com.abarrotespro.modelo.dao.PosPersistencia;
 import com.abarrotespro.modelo.EntradaMercancia;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
@@ -26,10 +29,13 @@ public class SistemaPos {
     private final List<Corte> historialCortes;
     private final List<RegistroSurtido> historialSurtidos;
     private final PosPersistencia persistencia;
+    private final Caja caja;
+    private final Inventario inventario;
+    private final VentaController ventaController;
+    private final CajaController cajaController;
 
     private Usuario usuarioActivo;
     private Venta ventaActual;
-    private double totalEnCaja;
     private double entradasManuales;
     private int contadorVentas;
     private int contadorProductos;
@@ -44,12 +50,15 @@ public class SistemaPos {
         historialCortes = new ArrayList<>();
         historialSurtidos = new ArrayList<>();
         persistencia = new PosPersistencia();
+        caja = new Caja();
+        inventario = new Inventario(productos);
+        ventaController = new VentaController(inventario, caja);
+        cajaController = new CajaController(caja);
         contadorVentas = 0;
         contadorProductos = 0;
         contadorCortes = 0;
         contadorProveedores = 0;
-        totalEnCaja = 1250.50;
-        entradasManuales = 200.00;
+        entradasManuales = 0;
         usuarios.add(new Usuario("admin", "admin123", "Administrador", "AD"));
         if (persistencia.existenDatos()) {
             try {
@@ -62,6 +71,9 @@ public class SistemaPos {
         } else {
             inicializarDatos();
             persistir();
+        }
+        if (!caja.isAbierta()) {
+            caja.abrirCaja(500.00);
         }
     }
 
@@ -82,19 +94,33 @@ public class SistemaPos {
         proveedores.addAll(estado.getProveedores());
         ventasDelDia.addAll(estado.getVentas());
         historialCortes.addAll(estado.getCortes());
-        totalEnCaja = estado.getTotalEnCaja();
         entradasManuales = estado.getEntradasManuales();
         contadorVentas = estado.getContadorVentas();
         contadorProductos = estado.getContadorProductos();
         contadorCortes = estado.getContadorCortes();
         contadorProveedores = estado.getContadorProveedores();
+        for (Venta v : ventasDelDia) {
+            if (!v.isCerrada()) {
+                v.setEstado(EstadoVenta.PAGADA);
+            }
+        }
+        if (estado.isCajaAbierta()) {
+            caja.restaurarEstado(
+                    estado.getFondoInicial(),
+                    estado.getIngresosEfectivo(),
+                    estado.getIngresosTarjeta(),
+                    estado.getIngresosTransferencia(),
+                    estado.getEgresosEfectivo());
+        }
     }
 
     public EstadoPersistido exportarEstado() {
         return new EstadoPersistido(
                 productos, ventasDelDia, historialCortes, proveedores,
-                totalEnCaja, entradasManuales,
-                contadorVentas, contadorProductos, contadorCortes, contadorProveedores);
+                caja.calcularEfectivoEsperado(), entradasManuales,
+                contadorVentas, contadorProductos, contadorCortes, contadorProveedores,
+                caja.getFondoInicial(), caja.getIngresosEfectivo(), caja.getIngresosTarjeta(),
+                caja.getIngresosTransferencia(), caja.getEgresosEfectivo(), caja.isAbierta());
     }
 
     private void persistir() {
@@ -169,11 +195,32 @@ public class SistemaPos {
     }
 
     public double getTotalEnCaja() {
-        return totalEnCaja;
+        return caja.calcularEfectivoEsperado();
     }
 
     public double getEntradasManuales() {
         return entradasManuales;
+    }
+
+    public Caja getCaja() {
+        return caja;
+    }
+
+    public VentaController getVentaController() {
+        return ventaController;
+    }
+
+    public CajaController getCajaController() {
+        return cajaController;
+    }
+
+    public boolean isCajaAbierta() {
+        return caja.isAbierta();
+    }
+
+    public void abrirCaja(double fondoInicial) {
+        caja.abrirCaja(fondoInicial);
+        persistir();
     }
 
     /** Autentica al usuario y prepara una venta nueva. */
@@ -241,11 +288,10 @@ public class SistemaPos {
             return "Producto no encontrado";
         }
         int enTicket = cantidadEnTicket(producto.getId());
-        if (producto.getStock() < cantidad) {
+        if (producto.getStock() < cantidad + enTicket) {
             return "Stock insuficiente (disponible: " + producto.getStock() + ")";
         }
         ventaActual.agregarProducto(producto, cantidad);
-        producto.reducirStock(cantidad);
         persistir();
         return null;
     }
@@ -271,7 +317,6 @@ public class SistemaPos {
         if (cantidad > linea.getCantidad()) {
             return "No puede eliminar mas de lo agregado (" + linea.getCantidad() + ")";
         }
-        linea.getProducto().aumentarStock(cantidad);
         if (cantidad == linea.getCantidad()) {
             ventaActual.eliminarLinea(indice);
         } else {
@@ -287,23 +332,27 @@ public class SistemaPos {
     }
 
     /**
-     * Cierra el ticket, actualiza caja e inventario persistido.
+     * Cierra el ticket con metodo de pago, actualiza caja e inventario.
+     *
      * @return la venta cerrada o null si el ticket esta vacio
      */
-    public Venta cobrarVenta() {
+    public Venta cobrarVenta(MetodoPago metodoPago) throws DineroInsuficienteException {
         if (ventaActual == null || ventaActual.estaVacia()) {
             return null;
         }
-        double total = ventaActual.getTotal();
+        ventaController.procesarPago(ventaActual, metodoPago);
         ventaActual.setFechaHora(java.time.LocalDateTime.now());
-        ventaActual.setCerrada(true);
         Venta ventaCerrada = ventaActual;
         ventasDelDia.add(ventaCerrada);
-        totalEnCaja += total;
         ventaActual = new Venta(++contadorVentas, usuarioActivo.getNombreCompleto());
         persistir();
-        System.out.println("Venta cobrada: $" + String.format("%.2f", total));
+        System.out.println("Venta cobrada: $" + String.format("%.2f", ventaCerrada.getMontoCobrable()));
         return ventaCerrada;
+    }
+
+    public void registrarPagoProveedor(String nombreProveedor, double monto, MetodoPago metodoPago) {
+        cajaController.registrarPagoProveedor(nombreProveedor, monto, metodoPago);
+        persistir();
     }
 
     public Producto buscarProductoPorId(int id) {
@@ -432,8 +481,9 @@ public class SistemaPos {
         for (LineaVenta linea : venta.getLineas()) {
             linea.getProducto().aumentarStock(linea.getCantidad());
         }
-        double monto = venta.getTotal();
-        totalEnCaja = Math.max(0, totalEnCaja - monto);
+        MetodoPago metodo = venta.getMetodoPago() != null ? venta.getMetodoPago() : MetodoPago.EFECTIVO;
+        caja.revertirIngreso(venta.getMontoCobrable(), metodo);
+        venta.setEstado(EstadoVenta.CANCELADA);
         ventasDelDia.remove(venta);
         try {
             LectorTickets.marcarComoCancelado(nombreArchivo);
@@ -478,28 +528,26 @@ public class SistemaPos {
     }
 
     public double getVentasHoy() {
-        return ventasDelDia.stream().mapToDouble(Venta::getTotal).sum();
+        return caja.calcularVentasHoy(ventasDelDia);
     }
 
     public double getUtilidadHoy() {
-        return ventasDelDia.stream().mapToDouble(Venta::getUtilidad).sum();
+        return caja.calcularUtilidadHoy(ventasDelDia);
     }
 
     public double getPromedioTicket() {
-        if (ventasDelDia.isEmpty()) {
-            return 0;
-        }
-        return getVentasHoy() / ventasDelDia.size();
+        return caja.calcularPromedioTicket(ventasDelDia);
     }
 
     /** Realiza corte de caja y reinicia el monto en efectivo. */
     public Corte cerrarDiaYLimpiarCaja() {
-        double monto = totalEnCaja;
+        double monto = caja.calcularEfectivoEsperado();
         Corte corte = new Corte(monto, usuarioActivo.getNombreCompleto());
         historialCortes.add(0, corte);
-        totalEnCaja = 0;
+        caja.cerrarDiaOperativo();
         entradasManuales = 0;
         ventasDelDia.clear();
+        ventaController.reiniciarAcumuladorEfectivo();
         persistir();
         System.out.println("Corte de caja realizado: $" + String.format("%.2f", monto));
         return corte;
@@ -508,7 +556,7 @@ public class SistemaPos {
     public void agregarEntradaManual(double monto) {
         if (monto > 0) {
             entradasManuales += monto;
-            totalEnCaja += monto;
+            caja.registrarIngreso(monto, MetodoPago.EFECTIVO, "Entrada manual de efectivo");
             persistir();
         }
     }
