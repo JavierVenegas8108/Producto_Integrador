@@ -1,0 +1,32 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               12:25:05
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceite spray              4    44.51     178.04
+Aceite Galon              2    54.12     108.24
+AguaCiel Galon            1    37.60      37.60
+Frijoles                  6    39.97     239.82
+Pasta Colgate MPA         1    54.82      54.82
+Shampoo Savile            1    40.92      40.92
+Pasta luigi               5    29.79     148.95
+----------------------------------------
+Cantidad total articulos:              20
+Subtotal:                          808.39
+IVA (16%):                         129.34
+----------------------------------------
+TOTAL FINAL:                       937.73
+Metodo de Pago:                  Efectivo
+Pago con:                    $    1000.00
+Su cambio:                   $      62.27
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================

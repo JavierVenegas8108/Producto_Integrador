@@ -6,5 +6,14 @@ package com.abarrotespro.modelo;
 public enum MetodoPago {
     EFECTIVO,
     TARJETA,
-    TRANSFERENCIA
+    TRANSFERENCIA;
+
+    /** Etiqueta legible para ticket e interfaz. */
+    public String getEtiqueta() {
+        return switch (this) {
+            case EFECTIVO -> "Efectivo";
+            case TARJETA -> "Tarjeta";
+            case TRANSFERENCIA -> "Transferencia";
+        };
+    }
 }

@@ -61,6 +61,11 @@ public class VentaController {
         montoAcumuladoEfectivo = 0;
     }
 
+    /** Reemplaza el monto recibido (entrada manual desde teclado). */
+    public void establecerMontoEfectivo(double monto) {
+        montoAcumuladoEfectivo = Math.max(0, monto);
+    }
+
     public double getMontoAcumuladoEfectivo() {
         return montoAcumuladoEfectivo;
     }

@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import com.abarrotespro.modelo.LineaVenta;
+import com.abarrotespro.modelo.MetodoPago;
 import com.abarrotespro.modelo.Venta;
 
 /**
@@ -60,6 +61,14 @@ public final class GeneradorTicket {
         }
         sb.append("----------------------------------------\n");
         sb.append(String.format(Locale.US, "%-28s %12.2f%n", "TOTAL FINAL:", venta.getTotal()));
+        MetodoPago metodo = venta.getMetodoPago();
+        if (metodo != null) {
+            sb.append(String.format("%-28s %12s%n", "Metodo de Pago:", metodo.getEtiqueta()));
+            if (metodo == MetodoPago.EFECTIVO) {
+                sb.append(String.format(Locale.US, "%-28s $%11.2f%n", "Pago con:", venta.getMontoRecibido()));
+                sb.append(String.format(Locale.US, "%-28s $%11.2f%n", "Su cambio:", venta.getCambio()));
+            }
+        }
         sb.append("========================================\n");
         sb.append("   Gracias por su preferencia!\n");
         sb.append("        Vuelva pronto.\n");

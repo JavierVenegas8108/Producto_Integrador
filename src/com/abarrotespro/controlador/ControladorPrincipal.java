@@ -227,10 +227,11 @@ public class ControladorPrincipal {
             solicitarAperturaCajaSiNecesario();
         }
         DialogoCobro.mostrar(vistaPrincipal, ventaActual, modelo.getVentaController())
-                .ifPresent(result -> finalizarCobro(result.metodoPago()));
+                .ifPresent(this::finalizarCobro);
     }
 
-    private void finalizarCobro(com.abarrotespro.modelo.MetodoPago metodoPago) {
+    private void finalizarCobro(DialogoCobro.ResultadoCobro resultado) {
+        com.abarrotespro.modelo.MetodoPago metodoPago = resultado.metodoPago();
         try {
             Venta ventaCerrada = modelo.cobrarVenta(metodoPago);
             if (ventaCerrada == null) {
