@@ -1,0 +1,27 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               15:05:34
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceite Ybarra             7    47.11     329.77
+Aceite 123                6    60.00     360.00
+----------------------------------------
+Cantidad total articulos:              13
+Subtotal:                          689.77
+IVA (16%):                         110.36
+----------------------------------------
+TOTAL FINAL:                       800.13
+Metodo de Pago:                  Efectivo
+Pago con:                    $    1000.00
+Su cambio:                   $     199.87
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================
