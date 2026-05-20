@@ -44,7 +44,8 @@ public class VentasDAO {
     }
 
     /**
-     * Registra un egreso de caja: INSERT en movimientos_caja y UPDATE en cajas.egresos.
+     * Registra un egreso en movimientos_caja.
+     * Nota: la tabla cajas solo tiene id/estado; no se actualizan montos ahi por ahora.
      */
     public void registrarEgreso(int cajaId, double monto, String concepto) throws SQLException {
         if (monto <= 0) {
@@ -54,40 +55,14 @@ public class VentasDAO {
                 INSERT INTO movimientos_caja (caja_id, tipo, monto, concepto, fecha_hora)
                 VALUES (?, 'EGRESO', ?, ?, ?)
                 """;
-        String updateCaja = """
-                UPDATE cajas
-                SET egresos = egresos + ?,
-                    total_caja = total_caja - ?
-                WHERE id = ?
-                """;
 
-        try (Connection con = Conexion.obtenerConexion()) {
-            con.setAutoCommit(false);
-            try {
-                try (PreparedStatement psMov = con.prepareStatement(insertMovimiento)) {
-                    psMov.setInt(1, cajaId);
-                    psMov.setDouble(2, monto);
-                    psMov.setString(3, concepto);
-                    psMov.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
-                    psMov.executeUpdate();
-                }
-                try (PreparedStatement psCaja = con.prepareStatement(updateCaja)) {
-                    psCaja.setDouble(1, monto);
-                    psCaja.setDouble(2, monto);
-                    psCaja.setInt(3, cajaId);
-                    int filas = psCaja.executeUpdate();
-                    if (filas == 0) {
-                        throw new SQLException("No existe la caja con id " + cajaId);
-                    }
-                }
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                e.printStackTrace();
-                throw e;
-            } finally {
-                con.setAutoCommit(true);
-            }
+        try (Connection con = Conexion.obtenerConexion();
+                PreparedStatement psMov = con.prepareStatement(insertMovimiento)) {
+            psMov.setInt(1, cajaId);
+            psMov.setDouble(2, monto);
+            psMov.setString(3, concepto);
+            psMov.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+            psMov.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             throw e;
@@ -95,49 +70,29 @@ public class VentasDAO {
     }
 
     /**
-     * Registra ingreso por venta cobrada (efectivo, tarjeta o transferencia).
+     * Registra el ingreso de una venta en movimientos_caja (opcional, no interrumpe el cobro).
+     * Totales en tabla cajas (ingresos/egresos/total_caja) deshabilitados: esa tabla aun no los tiene.
      */
-    public void registrarIngresoVenta(int cajaId, double monto, MetodoPago metodoPago, int ventaId)
-            throws SQLException {
+    public void registrarIngresoVenta(int cajaId, double monto, MetodoPago metodoPago, int ventaId) {
+        if (monto <= 0) {
+            return;
+        }
         String concepto = "Venta #" + ventaId + " - " + metodoPago.getEtiqueta();
         String insertMovimiento = """
                 INSERT INTO movimientos_caja (caja_id, tipo, monto, concepto, fecha_hora)
                 VALUES (?, 'INGRESO', ?, ?, ?)
                 """;
-        String updateCaja = """
-                UPDATE cajas
-                SET ingresos = ingresos + ?,
-                    total_caja = total_caja + ?
-                WHERE id = ?
-                """;
 
-        try (Connection con = Conexion.obtenerConexion()) {
-            con.setAutoCommit(false);
-            try {
-                try (PreparedStatement psMov = con.prepareStatement(insertMovimiento)) {
-                    psMov.setInt(1, cajaId);
-                    psMov.setDouble(2, monto);
-                    psMov.setString(3, concepto);
-                    psMov.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
-                    psMov.executeUpdate();
-                }
-                try (PreparedStatement psCaja = con.prepareStatement(updateCaja)) {
-                    psCaja.setDouble(1, monto);
-                    psCaja.setDouble(2, monto);
-                    psCaja.setInt(3, cajaId);
-                    psCaja.executeUpdate();
-                }
-                con.commit();
-            } catch (SQLException e) {
-                con.rollback();
-                e.printStackTrace();
-                throw e;
-            } finally {
-                con.setAutoCommit(true);
-            }
+        try (Connection con = Conexion.obtenerConexion();
+                PreparedStatement psMov = con.prepareStatement(insertMovimiento)) {
+            psMov.setInt(1, cajaId);
+            psMov.setDouble(2, monto);
+            psMov.setString(3, concepto);
+            psMov.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+            psMov.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-            throw e;
+            // No relanzar: la venta ya quedo en ventas/detalle_ventas; el movimiento de caja es complementario.
         }
     }
 

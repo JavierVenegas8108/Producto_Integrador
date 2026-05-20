@@ -17,10 +17,6 @@ CREATE TABLE IF NOT EXISTS productos (
 
 CREATE TABLE IF NOT EXISTS cajas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    fondo_inicial DECIMAL(12,2) NOT NULL DEFAULT 0,
-    ingresos DECIMAL(12,2) NOT NULL DEFAULT 0,
-    egresos DECIMAL(12,2) NOT NULL DEFAULT 0,
-    total_caja DECIMAL(12,2) NOT NULL DEFAULT 0,
     estado TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1=abierta, 0=cerrada'
 );
 
@@ -56,6 +52,6 @@ CREATE TABLE IF NOT EXISTS detalle_ventas (
 );
 
 -- Caja inicial de ejemplo
-INSERT INTO cajas (fondo_inicial, ingresos, egresos, total_caja, estado)
-SELECT 500, 0, 0, 500, 1
+INSERT INTO cajas (estado)
+SELECT 1
 WHERE NOT EXISTS (SELECT 1 FROM cajas);

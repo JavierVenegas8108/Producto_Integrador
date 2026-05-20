@@ -111,12 +111,7 @@ public class VentasController {
         }
 
         int ventaId = ventasDAO.registrarVenta(cajaIdActual, venta, metodoPago, recibido, cambio);
-        try {
-            ventasDAO.registrarIngresoVenta(cajaIdActual, total, metodoPago, ventaId);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw e;
-        }
+        ventasDAO.registrarIngresoVenta(cajaIdActual, total, metodoPago, ventaId);
 
         inventario.aplicarSalidaPorVenta(venta);
 
