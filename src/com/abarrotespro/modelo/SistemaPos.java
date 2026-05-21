@@ -16,6 +16,7 @@ import com.abarrotespro.controlador.VentasController;
 import config.Conexion;
 import com.abarrotespro.excepcion.DineroInsuficienteException;
 import com.abarrotespro.modelo.dao.PosPersistencia;
+import com.abarrotespro.modelo.dao.ProductosDAO;
 import com.abarrotespro.modelo.dao.ProductosMigracion;
 import com.abarrotespro.modelo.EntradaMercancia;
 import com.abarrotespro.modelo.dto.EstadoPersistido;
@@ -42,6 +43,7 @@ public class SistemaPos {
     private final VentaController ventaController;
     private final VentasController ventasController;
     private final CajaController cajaController;
+    private final ProductosDAO productosDAO;
     private boolean usarBaseDatos;
 
     private Usuario usuarioActivo;
@@ -65,6 +67,7 @@ public class SistemaPos {
         ventaController = new VentaController(inventario, caja);
         ventasController = new VentasController(inventario);
         cajaController = new CajaController(caja);
+        productosDAO = new ProductosDAO();
         usarBaseDatos = Conexion.probarConexion();
         contadorVentas = 0;
         contadorProductos = 0;
@@ -541,7 +544,43 @@ public class SistemaPos {
         return nuevo;
     }
 
+    /**
+     * Persiste en MySQL un producto recien creado (llamar despues de asignar la imagen).
+     */
+    public void registrarProductoEnBaseDatos(Producto producto) {
+        if (producto == null) {
+            return;
+        }
+        if (!usarBaseDatos) {
+            System.err.println("[MySQL] Sin conexion: producto solo quedo en memoria ("
+                    + producto.getNombre() + ")");
+            return;
+        }
+        try {
+            int idDb = productosDAO.registrarProducto(producto);
+            producto.setId(idDb);
+            contadorProductos = Math.max(contadorProductos, idDb);
+            System.out.println("[MySQL] Producto guardado id=" + idDb + " -> " + producto.getNombre());
+        } catch (java.sql.SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void actualizarProducto(Producto producto) {
+        if (producto != null && usarBaseDatos) {
+            try {
+                int filas = productosDAO.actualizarProducto(producto);
+                if (filas > 0) {
+                    System.out.println("[MySQL] Producto actualizado id=" + producto.getId()
+                            + " -> " + producto.getNombre());
+                } else {
+                    System.err.println("[MySQL] No se encontro producto id=" + producto.getId()
+                            + " para actualizar");
+                }
+            } catch (java.sql.SQLException e) {
+                e.printStackTrace();
+            }
+        }
         persistir();
     }
 

@@ -372,6 +372,7 @@ public class ControladorPrincipal {
                         datos.nombre(), datos.precioCompra(), datos.precioVenta(),
                         datos.stockInicial(), datos.stockMinimo(), datos.idProveedor(), null);
                 aplicarImagenProducto(nuevo, datos);
+                modelo.registrarProductoEnBaseDatos(nuevo);
                 modelo.actualizarProducto(nuevo);
                 refrescarInventario();
                 refrescarCatalogo();

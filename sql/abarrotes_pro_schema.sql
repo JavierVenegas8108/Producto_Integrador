@@ -9,10 +9,10 @@ CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo_barras VARCHAR(32) UNIQUE,
     nombre VARCHAR(120) NOT NULL,
+    imagen VARCHAR(255) NULL,
     precio_venta DECIMAL(10,2) NOT NULL DEFAULT 0,
     stock_actual INT NOT NULL DEFAULT 0,
-    stock_minimo INT NOT NULL DEFAULT 0,
-    imagen VARCHAR(255) NULL COMMENT 'Ruta classpath ej. /img/Coca_300.jpg'
+    stock_minimo INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS cajas (

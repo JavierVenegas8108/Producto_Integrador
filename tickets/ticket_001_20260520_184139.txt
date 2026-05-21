@@ -1,0 +1,26 @@
+========================================
+           ABARROTES PRO
+========================================
+Fecha:              20/05/2026
+Hora:               18:41:39
+ID Transaccion:     1
+Atendio:            Administrador
+----------------------------------------
+DETALLE DE COMPRA
+----------------------------------------
+Producto               Cant   P.Unit   Subtotal
+----------------------------------------
+Aceite 123               10    50.00     500.00
+----------------------------------------
+Cantidad total articulos:              10
+Subtotal:                          500.00
+IVA (16%):                          80.00
+----------------------------------------
+TOTAL FINAL:                       580.00
+Metodo de Pago:                  Efectivo
+Pago con:                    $     600.00
+Su cambio:                   $      20.00
+========================================
+   Gracias por su preferencia!
+        Vuelva pronto.
+========================================
