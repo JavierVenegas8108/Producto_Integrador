@@ -11,6 +11,6 @@ public class AbarrotesProApp {
         // SistemaPos migra productos desde src/img a MySQL si la tabla esta vacia
         ControladorPrincipal controlador = new ControladorPrincipal();
         controlador.iniciar();
-        //ANDIHBI
+        
     }
 }
